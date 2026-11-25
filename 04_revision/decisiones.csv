@@ -1,0 +1,5 @@
+id,stage,observation,proposed_decision,reason,team_status,result
+D01,V1,Global inventory not interval-aware,Adopt interval-based capacity,Core booking integrity,PENDING_REVIEW,NOT_IMPLEMENTED
+D02,V1,Fixed price and no vehicle differentiation,Add transparent configurable pricing,Compare suitable garages,PENDING_REVIEW,NOT_IMPLEMENTED
+D03,V1,Local storage only,Document concurrency limitation and evaluate shared store,Avoid false guarantees,PENDING_REVIEW,NOT_IMPLEMENTED
+D04,V1,External payments and ratings not integrated,Keep demo data and evaluate test services,Cost and dependency control,PENDING_REVIEW,NOT_IMPLEMENTED
