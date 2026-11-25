@@ -14,3 +14,5 @@
 | PF-11 | Mercado Pago test integration | Optional |
 | PF-12 | Shared data, roles and transactional concurrency | High for multiuser |
 | PF-13 | Regression tests, contingencies and documentation | Critical |
+
+| PF-14 | Map provider adapter: Google target, OSM fallback, keyless directions and quota controls | High |
