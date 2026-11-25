@@ -1,0 +1,2488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="ParkFinder — buscá, compará y reservá estacionamientos privados en Buenos Aires con confirmación inmediata." />
+<title>ParkFinder · Estacionamientos privados en Buenos Aires</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  :root{
+    --emerald:#10B981;
+    --emerald-dark:#059669;
+    --emerald-deep:#064E3B;
+    --emerald-soft:#D1FAE5;
+    --ink:#0F172A;
+    --ink-2:#111827;
+    --slate-700:#334155;
+    --slate-500:#64748B;
+    --slate-400:#94A3B8;
+    --line:#E2E8F0;
+    --bg:#F4F7F5;
+    --card:#FFFFFF;
+    --amber:#F59E0B;
+    --amber-soft:#FEF3C7;
+    --amber-deep:#92400E;
+    --red:#DC2626;
+    --red-soft:#FEE2E2;
+    --blue:#3B82F6;
+    --radius:16px;
+    --shadow:0 10px 30px rgba(15,23,42,.08);
+    --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 8% -12%, #E4F5EC 0%, rgba(228,245,236,0) 60%),
+      var(--bg);
+    font-size:14px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  body.modal-open{ overflow:hidden; }
+  button{ font-family:inherit; }
+  h1,h2,h3,h4{ margin:0; line-height:1.2; }
+  p{ margin:0; }
+  .muted{ color:var(--slate-500); }
+  .small{ font-size:.78rem; }
+  .danger{ color:var(--red) !important; }
+  .wrap{ width:100%; max-width:1320px; margin:0 auto; padding:0 20px; }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:900;
+    background:linear-gradient(180deg, #0F172A 0%, #101B30 100%);
+    color:#F8FAFC;
+    border-bottom:1px solid rgba(148,163,184,.22);
+    padding:12px 20px;
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:11px; min-width:0; }
+  .brand-mark{
+    width:40px; height:40px; border-radius:12px; flex:0 0 auto;
+    display:grid; place-items:center;
+    background:linear-gradient(145deg, var(--emerald) 0%, #34D399 100%);
+    color:#04211A; font-weight:900; font-size:20px;
+    box-shadow:0 6px 16px rgba(16,185,129,.35);
+  }
+  .brand-title{ font-size:1.22rem; font-weight:800; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
+  .brand-sub{ font-size:.72rem; color:#94A3B8; letter-spacing:.01em; }
+  .pill{
+    display:inline-block; font-size:.62rem; font-weight:800; letter-spacing:.06em;
+    padding:2px 7px; border-radius:999px; color:#A7F3D0;
+    border:1px solid rgba(16,185,129,.45); background:rgba(16,185,129,.12);
+    vertical-align:middle;
+  }
+  .header-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .header-count{
+    font-size:.73rem; color:#CBD5E1; background:rgba(148,163,184,.12);
+    border:1px solid rgba(148,163,184,.22); padding:5px 10px; border-radius:999px;
+    white-space:nowrap;
+  }
+  .status-dot{
+    width:8px; height:8px; border-radius:50%; background:var(--emerald);
+    box-shadow:0 0 0 4px rgba(16,185,129,.16);
+  }
+  .lang-switch{
+    display:inline-flex; align-items:center; gap:2px;
+    background:rgba(148,163,184,.12); border:1px solid rgba(148,163,184,.3);
+    border-radius:9px; padding:2px;
+  }
+  .lang-btn{
+    border:0; background:transparent; color:#94A3B8;
+    font-size:.7rem; font-weight:800; letter-spacing:.05em;
+    padding:5px 9px; border-radius:7px; cursor:pointer; transition:background .15s, color .15s;
+  }
+  .lang-btn:hover:not(.active){ color:#F8FAFC; }
+  .lang-btn.active{ background:var(--emerald); color:#052E22; }
+  .lang-btn:focus-visible{ outline:2px solid #6EE7B7; outline-offset:1px; }
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    border:1px solid transparent; border-radius:10px;
+    padding:9px 14px; font-size:.83rem; font-weight:700;
+    cursor:pointer; transition:background .15s, border-color .15s, color .15s, transform .05s;
+    white-space:nowrap;
+  }
+  .btn:active{ transform:translateY(1px); }
+  .btn[disabled]{ opacity:.45; cursor:not-allowed; transform:none; }
+  .btn-sm{ padding:7px 10px; font-size:.75rem; border-radius:9px; }
+  .btn-primary{ background:var(--emerald); color:#052E22; border-color:var(--emerald); }
+  .btn-primary:hover{ background:#34D399; border-color:#34D399; }
+  .btn-ghost{ background:rgba(255,255,255,.06); color:#E2E8F0; border-color:rgba(148,163,184,.35); }
+  .btn-ghost:hover{ background:rgba(255,255,255,.12); border-color:rgba(148,163,184,.6); }
+  .btn-outline{ background:transparent; color:#A7F3D0; border-color:rgba(16,185,129,.5); }
+  .btn-outline:hover{ background:rgba(16,185,129,.12); }
+  .btn-danger-ghost{ background:rgba(220,38,38,.10); color:#FCA5A5; border-color:rgba(248,113,113,.35); }
+  .btn-danger-ghost:hover{ background:rgba(220,38,38,.2); }
+  .icon-btn{
+    background:transparent; border:0; color:#64748B; font-size:1.4rem; line-height:1;
+    cursor:pointer; width:32px; height:32px; border-radius:8px; display:grid; place-items:center;
+  }
+  .icon-btn:hover{ background:#F1F5F9; color:var(--ink); }
+
+  /* ---------- Badges / tags ---------- */
+  .badge{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:.62rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+    padding:3px 8px; border-radius:999px; border:1px solid transparent; white-space:nowrap;
+  }
+  .badge-func{ background:var(--emerald-soft); color:#065F46; border-color:#6EE7B7; }
+  .badge-simulado{ background:var(--amber-soft); color:var(--amber-deep); border-color:#FCD34D; }
+  .badge-conceptual{ background:#E0E7FF; color:#3730A3; border-color:#A5B4FC; }
+  .tag{
+    display:inline-flex; align-items:center;
+    font-size:.7rem; font-weight:600; color:var(--slate-700);
+    background:#F1F5F9; border:1px solid #E2E8F0; border-radius:999px; padding:2px 8px;
+  }
+
+  /* ---------- Banner fallback ---------- */
+  .banner{
+    display:flex; align-items:center; gap:12px;
+    max-width:1320px; margin:14px auto 0; width:calc(100% - 40px);
+    background:#FFFBEB; border:1px solid #FDE68A; border-left:4px solid var(--amber);
+    color:#78350F; border-radius:12px; padding:11px 14px;
+  }
+  .banner-icon{
+    flex:none; width:34px; height:34px; border-radius:50%;
+    background:#FEF3C7; border:1px solid #FDE68A;
+    display:grid; place-items:center; font-size:1rem;
+  }
+  .banner-body{ flex:1; min-width:0; }
+  .banner-body strong{
+    display:block; font-size:.8rem; font-weight:800;
+    letter-spacing:0; text-transform:none; margin-bottom:2px; color:#78350F;
+  }
+  .banner-body span{ font-size:.78rem; line-height:1.4; color:#92400E; }
+  .banner-action{
+    flex:none; border:1px solid #F59E0B; background:#FFFFFF; color:#92400E;
+    font-size:.72rem; font-weight:800; padding:8px 12px; border-radius:8px;
+    cursor:pointer; white-space:nowrap; transition:background .15s, color .15s;
+  }
+  .banner-action:hover{ background:#F59E0B; color:#FFFFFF; }
+  .banner-action:focus-visible{ outline:2px solid #F59E0B; outline-offset:2px; }
+  .banner[hidden]{ display:none; }
+
+  /* ---------- Layout ---------- */
+  main{ padding-bottom:28px; }
+  .search-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:18px 18px 14px; margin-top:18px;
+  }
+  .search-title-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .search-title-row h2{ font-size:1.05rem; letter-spacing:-.01em; }
+  .tiny-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+
+  .search-form{
+    display:grid;
+    grid-template-columns:1.15fr 1.55fr .9fr .75fr .7fr auto;
+    gap:12px; align-items:end;
+  }
+  .f{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .f label{
+    font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--slate-500);
+  }
+  .input{
+    width:100%; min-width:0; background:#fff; color:var(--ink);
+    border:1px solid #CBD5E1; border-radius:10px; padding:9px 10px;
+    font-size:.86rem; font-family:inherit; outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  .input:focus{ border-color:var(--emerald); box-shadow:0 0 0 3px rgba(16,185,129,.18); }
+  .input-sm{ padding:6px 8px; font-size:.78rem; border-radius:8px; }
+  #hoursInput{ text-align:center; }
+  .f-submit .btn{ width:100%; height:37px; }
+  .search-sub{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    margin-top:12px; padding-top:12px; border-top:1px dashed var(--line);
+  }
+  .check{ display:inline-flex; align-items:center; gap:7px; font-size:.79rem; color:var(--slate-700); cursor:pointer; }
+  .check input{ accent-color:var(--emerald); width:15px; height:15px; margin:0; }
+  .check.check-warn{ color:#92400E; font-weight:600; }
+  .dest-line{ font-size:.78rem; color:var(--slate-500); margin-top:10px; }
+  .dest-line strong{ color:var(--ink); font-weight:700; }
+</style>
+<style>
+  /* ---------- Layout / Mapa / Resultados ---------- */
+  .layout{
+    display:grid; grid-template-columns:minmax(0,1.02fr) minmax(0,1.22fr);
+    gap:18px; align-items:start; margin-top:18px;
+  }
+  .map-card{
+    position:sticky; top:86px;
+    height:610px; border-radius:var(--radius); overflow:hidden;
+    border:1px solid var(--line); background:#E8EDEA;
+    box-shadow:var(--shadow);
+  }
+  #map{ position:absolute; inset:0; width:100%; height:100%; z-index:1; background:#E8EDEA; }
+  .map-head{
+    position:absolute; top:12px; left:12px; z-index:600;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:rgba(15,23,42,.92); color:#E2E8F0;
+    border:1px solid rgba(148,163,184,.25);
+    padding:8px 12px; border-radius:10px; font-size:.72rem;
+    backdrop-filter:blur(4px);
+  }
+  .map-title{ font-weight:800; letter-spacing:.05em; text-transform:uppercase; font-size:.64rem; color:#A7F3D0; }
+  .legend{ display:inline-flex; align-items:center; gap:5px; color:#CBD5E1; }
+  .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .dot-dest{ background:var(--blue); }
+  .dot-car{ background:var(--emerald); }
+  .map-down{
+    position:absolute; inset:0; z-index:500; display:flex; align-items:center; justify-content:center;
+    background:rgba(15,23,42,.42); backdrop-filter:blur(1.5px); padding:20px;
+  }
+  .map-down[hidden]{ display:none; }
+  .map-down-box{
+    max-width:340px; background:#FFF8E6; color:#78350F; border:1px solid #FCD34D;
+    border-radius:12px; padding:14px 16px; text-align:center; font-size:.82rem;
+    box-shadow:0 18px 40px rgba(15,23,42,.3);
+  }
+  .map-down-box strong{ display:block; margin-bottom:4px; }
+  .map-fallback{
+    position:absolute; inset:0; display:grid; place-items:center; padding:26px;
+    text-align:center; font-size:.85rem; color:var(--slate-500); background:#EEF2F0;
+  }
+  .price-marker-icon{ background:none; border:none; }
+  .price-marker{
+    position:relative; display:flex; align-items:center; justify-content:center; gap:1px;
+    height:28px; padding:0 9px; border-radius:999px; white-space:nowrap;
+    background:#fff; border:2px solid var(--emerald); color:#065F46;
+    font-weight:800; font-size:12.5px; box-shadow:0 6px 14px rgba(15,23,42,.18);
+    font-family:var(--sans);
+  }
+  .price-marker small{ font-size:8.5px; font-weight:700; color:var(--slate-500); margin-left:1px; }
+  .price-marker::after{
+    content:""; position:absolute; bottom:-5px; left:50%; transform:translateX(-50%) rotate(45deg);
+    width:8px; height:8px; background:#fff; border-right:2px solid var(--emerald); border-bottom:2px solid var(--emerald);
+  }
+  .price-marker.is-zero{ border-color:#CBD5E1; color:#64748B; background:#F8FAFC; }
+  .price-marker.is-zero::after{ border-color:#CBD5E1; background:#F8FAFC; }
+  .price-dot-icon{ background:none; border:none; }
+  .price-dot{
+    width:16px; height:16px; border-radius:50%; background:var(--emerald);
+    border:2.5px solid #fff; box-shadow:0 3px 9px rgba(15,23,42,.28);
+    box-sizing:border-box;
+  }
+  .dest-marker{
+    background:var(--blue); color:#fff; font-size:9.5px; font-weight:800; letter-spacing:.06em;
+    padding:5px 8px; border-radius:6px; text-align:center; width:70px;
+    box-shadow:0 5px 12px rgba(59,130,246,.4);
+    font-family:var(--sans);
+  }
+  .leaflet-popup-content-wrapper{ border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.22); }
+  .leaflet-popup-content{ margin:12px 14px; font-family:var(--sans); }
+  .map-popup strong{ display:block; font-size:.86rem; color:var(--ink); }
+  .mp-addr{ font-size:.73rem; color:var(--slate-500); margin-top:2px; }
+  .mp-price{ font-size:.78rem; color:#065F46; font-weight:800; margin-top:6px; }
+  .mp-meta{ font-size:.7rem; color:var(--slate-500); margin-top:2px; }
+  .mp-reserve{
+    margin-top:8px; width:100%; border:1px solid var(--emerald); background:var(--emerald);
+    color:#052E22; border-radius:8px; padding:5px 8px; font-size:.74rem; font-weight:800;
+    cursor:pointer;
+  }
+  .mp-reserve[disabled]{ background:#E2E8F0; border-color:#CBD5E1; color:#64748B; cursor:not-allowed; }
+  .mp-reserve:not([disabled]):hover{ background:#34D399; }
+
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:16px; min-height:320px;
+  }
+  .panel-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:13px; }
+  .panel-head h2{ font-size:1.02rem; }
+  .panel-head .muted{ font-size:.76rem; margin-top:2px; }
+  .sort-label{ display:flex; align-items:center; gap:8px; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--slate-500); }
+  .sort-label select{ width:auto; text-transform:none; font-weight:600; letter-spacing:0; }
+  .results{ display:grid; gap:12px; }
+
+  /* ---------- Card cochera ---------- */
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:13px; padding:14px;
+    cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .1s;
+    position:relative;
+  }
+  .card:hover{ border-color:#A7F3D0; box-shadow:0 10px 24px rgba(16,185,129,.10); }
+  .card.unavailable{ opacity:.72; cursor:not-allowed; background:#FBFCFC; }
+  .card.unavailable:hover{ border-color:var(--line); box-shadow:none; }
+  .card.flash{ animation:flash 1.5s ease; }
+  @keyframes flash{ 0%,100%{ box-shadow:0 0 0 0 rgba(245,158,11,0); } 25%,70%{ box-shadow:0 0 0 3px rgba(245,158,11,.55); } }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .card h3{ font-size:.95rem; letter-spacing:-.01em; }
+  .addr{ font-size:.75rem; color:var(--slate-500); margin-top:3px; }
+  .price{ text-align:right; line-height:1.05; flex:0 0 auto; }
+  .price strong{ font-size:1.12rem; color:#065F46; font-weight:900; letter-spacing:-.02em; }
+  .price span{ display:block; font-size:.62rem; color:var(--slate-500); font-weight:700; margin-top:3px; text-transform:uppercase; letter-spacing:.05em; }
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 10px; }
+  .stat{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .stat-label{ font-size:.63rem; text-transform:uppercase; letter-spacing:.06em; color:var(--slate-400); font-weight:800; }
+  .stat strong{ font-size:.82rem; color:var(--ink); font-weight:700; overflow-wrap:anywhere; }
+  .stat strong.em{ color:#065F46; }
+  .tags{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .card-foot{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    margin-top:12px; padding-top:11px; border-top:1px dashed var(--line);
+  }
+  .card-foot .slot{ font-size:.72rem; color:var(--slate-500); font-weight:600; }
+  .btn-reserve{
+    border:1px solid var(--emerald); background:var(--emerald); color:#052E22;
+    font-weight:800; font-size:.76rem; padding:7px 13px; border-radius:8px; cursor:pointer;
+    transition:background .15s;
+  }
+  .btn-reserve:hover{ background:#34D399; }
+  .btn-reserve[disabled]{ background:#E2E8F0; border-color:#CBD5E1; color:#64748B; cursor:not-allowed; }
+  .empty-state{
+    border:1px dashed #CBD5E1; border-radius:12px; padding:22px 16px; text-align:center;
+    background:#FAFBFC; color:var(--slate-500); font-size:.84rem;
+  }
+  .empty-state strong{ display:block; color:var(--ink); margin-bottom:4px; }
+
+  /* ---------- Footer ---------- */
+  .footer{
+    border-top:1px solid var(--line); padding-top:16px; margin-top:22px;
+    display:flex; gap:10px 22px; flex-wrap:wrap; font-size:.73rem; color:var(--slate-500);
+    align-items:center;
+  }
+  .footer > div{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+</style>
+<style>
+  /* ---------- Modales ---------- */
+  .modal{
+    position:fixed; inset:0; z-index:1000; display:none;
+    align-items:center; justify-content:center; padding:18px;
+    background:rgba(9,14,26,.55); backdrop-filter:blur(3px);
+  }
+  .modal.show{ display:flex; }
+  .modal-card{
+    width:100%; max-width:520px; max-height:90vh; overflow:auto;
+    background:#fff; border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 30px 80px rgba(9,14,26,.38);
+    padding:20px; animation:pop .18s ease-out;
+  }
+  .modal-card.wide{ max-width:680px; }
+  @keyframes pop{ from{ opacity:0; transform:translateY(10px) scale(.985); } to{ opacity:1; transform:none; } }
+  .modal-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .modal-head h3{ font-size:1.08rem; letter-spacing:-.01em; }
+  .modal-sub{ font-size:.8rem; color:var(--slate-500); margin-top:5px; }
+  .summary-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:9px;
+    background:#F8FAFC; border:1px solid var(--line); border-radius:11px;
+    padding:12px; margin:14px 0;
+  }
+  .summary-grid > div{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .summary-grid span{ font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; color:var(--slate-400); font-weight:800; }
+  .summary-grid strong{ font-size:.83rem; color:var(--ink); overflow-wrap:anywhere; }
+  .pay-row{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--amber-soft); border:1px solid #FCD34D; color:#78350F;
+    border-radius:10px; padding:10px 12px; font-size:.8rem; margin-bottom:14px;
+  }
+  .pay-row strong{ font-size:.92rem; }
+  .plate-label{
+    display:block; font-size:.68rem; font-weight:800; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--slate-500); margin-bottom:5px;
+  }
+  .plate-row{ display:flex; gap:8px; }
+  .plate-row .input{ flex:1; }
+  .modal-notes{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:11px; font-size:.72rem; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:9px; margin-top:16px; flex-wrap:wrap; }
+  .modal .btn-ghost{ background:#F1F5F9; color:var(--slate-700); border-color:#E2E8F0; }
+  .modal .btn-ghost:hover{ background:#E2E8F0; }
+
+  /* ---------- Éxito / QR ---------- */
+  .success{ text-align:left; }
+  .success-mark{
+    width:46px; height:46px; border-radius:50%; display:grid; place-items:center;
+    background:var(--emerald); color:#052E22; font-size:1.5rem; font-weight:900;
+    box-shadow:0 8px 18px rgba(16,185,129,.3); margin-bottom:10px;
+  }
+  .booking-id{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:#ECFDF5; border:1px solid #A7F3D0; border-radius:11px;
+    padding:11px 12px; margin:14px 0 12px;
+  }
+  .booking-id span{ font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:#047857; font-weight:800; }
+  .booking-id strong{ font-family:var(--mono); font-size:1.05rem; letter-spacing:.04em; color:#064E3B; }
+  .booking-id .btn{ margin-left:auto; }
+
+  /* ---------- Mis reservas ---------- */
+  .bookings-list{
+    display:flex; flex-direction:column; gap:10px;
+    margin-top:14px; max-height:min(52vh, 460px); overflow:auto; padding-right:2px;
+  }
+  .booking-row{
+    border:1px solid var(--line); border-radius:12px;
+    padding:12px; background:#F8FAFC;
+  }
+  .booking-row-top{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:10px; flex-wrap:wrap;
+  }
+  .booking-row h4{ font-size:.88rem; letter-spacing:-.01em; }
+  .booking-row .bid{
+    display:inline-block; margin-top:3px; font-family:var(--mono);
+    font-size:.72rem; font-weight:800; letter-spacing:.05em; color:#047857;
+    background:#ECFDF5; border:1px solid #A7F3D0; border-radius:6px; padding:2px 7px;
+  }
+  .booking-meta{
+    display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:7px 14px; margin:10px 0; font-size:.78rem; color:var(--slate-700);
+  }
+  .booking-meta span{
+    display:block; font-size:.62rem; text-transform:uppercase;
+    letter-spacing:.05em; font-weight:800; color:var(--slate-400);
+  }
+  .booking-meta strong{ overflow-wrap:anywhere; }
+  .booking-actions{ display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+  .booking-actions .btn{ font-size:.72rem; padding:7px 10px; border-radius:8px; }
+  .booking-empty{
+    text-align:center; padding:26px 16px; border:1px dashed #CBD5E1;
+    border-radius:12px; background:#F8FAFC; color:var(--slate-500);
+  }
+  .booking-empty strong{ display:block; color:var(--ink); font-size:.9rem; margin-bottom:5px; }
+  .booking-empty p{ font-size:.78rem; margin:0; }
+  .qr-detail{
+    margin-top:14px; border:1px solid var(--line); border-radius:12px;
+    padding:14px; background:#F8FAFC; text-align:center;
+  }
+  .qr-detail .qr-caption{ margin:8px auto 0; }
+  .success-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; border:1px solid var(--line); border-radius:11px; padding:12px; }
+  .success-grid > div{ display:flex; flex-direction:column; min-width:0; }
+  .success-grid span{ font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; color:var(--slate-400); font-weight:800; }
+  .success-grid strong{ font-size:.8rem; overflow-wrap:anywhere; }
+  .qr-box{
+    display:flex; flex-direction:column; align-items:center; gap:7px;
+    padding:14px 0 2px;
+  }
+  .qr-svg{ border-radius:10px; box-shadow:0 10px 24px rgba(15,23,42,.14); }
+  .qr-caption{ font-size:.68rem; color:var(--slate-500); text-align:center; max-width:340px; }
+  .qr-box code{ font-family:var(--mono); font-size:.8rem; color:var(--ink); letter-spacing:.08em; }
+
+  /* ---------- Estado V1 ---------- */
+  .status-block{ margin-top:16px; }
+  .status-block h4{ font-size:.78rem; display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .status-block ul{ margin:0 0 4px; padding-left:18px; font-size:.8rem; color:var(--slate-700); }
+  .status-block li{ margin:3px 0; }
+  .status-block li strong{ color:var(--ink); }
+  .status-note{
+    margin-top:14px; padding:10px 12px; border-radius:10px; font-size:.75rem;
+    background:#F1F5F9; color:var(--slate-700); border:1px solid var(--line);
+  }
+  .demo-block{
+    margin-top:14px; padding:12px 14px; border-radius:11px;
+    background:#ECFDF5; border:1px solid #A7F3D0;
+  }
+  .demo-block h4{
+    font-size:.78rem; display:flex; align-items:center; gap:8px;
+    margin-bottom:7px; color:#065F46;
+  }
+  .demo-block ol{ margin:0; padding-left:20px; font-size:.8rem; color:#064E3B; }
+  .demo-block li{ margin:4px 0; }
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed; left:50%; bottom:22px; z-index:1200;
+    transform:translate(-50%, 70px);
+    background:#0F172A; color:#F8FAFC; border:1px solid #334155;
+    padding:11px 16px; border-radius:11px; font-size:.8rem; font-weight:600;
+    box-shadow:0 18px 40px rgba(9,14,26,.35);
+    opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease;
+    max-width:min(560px, calc(100vw - 32px)); text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+  .toast.warn{ border-color:#F59E0B; background:#3B2A08; color:#FDE68A; }
+  .toast.err{ border-color:#DC2626; background:#3B0A0A; color:#FECACA; }
+  .toast.ok{ border-color:#10B981; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:1080px){
+    .search-form{ grid-template-columns:1.1fr 1.3fr .8fr .8fr .8fr; }
+    .f-submit{ grid-column:1 / -1; }
+    .f-submit .btn{ width:auto; min-width:180px; justify-self:start; padding-inline:26px; }
+  }
+  @media (max-width:960px){
+    .layout{ grid-template-columns:1fr; }
+    .map-card{ position:relative; top:0; height:360px; }
+    .header-actions{ justify-content:flex-start; }
+    .topbar{ align-items:flex-start; position:relative; }
+  }
+  @media (max-width:720px){
+    .wrap{ padding:0 14px; }
+    .topbar{ padding:11px 14px; }
+    .brand-sub{ display:none; }
+    .header-actions{ width:100%; gap:6px; }
+    .header-actions .btn{ font-size:.7rem; padding:6px 8px; }
+    .header-count{ display:none; }
+    .search-card{ padding:14px; margin-top:12px; }
+    .search-form{ grid-template-columns:1fr 1fr; }
+    .f-zone, .f-addr, .f-submit{ grid-column:1 / -1; }
+    .f-submit .btn{ width:100%; }
+    .banner{ width:calc(100% - 28px); display:grid; grid-template-columns:auto 1fr; align-items:start; }
+    .banner-action{ grid-column:1 / -1; width:100%; }
+    .panel{ padding:13px; }
+    .card-top{ flex-direction:column; gap:6px; }
+    .price{ text-align:left; }
+    .stats{ grid-template-columns:1fr 1fr; }
+    .modal{ padding:10px; }
+    .modal-card{ padding:16px; border-radius:15px; }
+    .summary-grid, .success-grid, .booking-meta{ grid-template-columns:1fr; }
+    .booking-id .btn{ margin-left:0; }
+    .booking-actions{ justify-content:stretch; }
+  }
+  @media (max-width:420px){
+    .search-form{ grid-template-columns:1fr; }
+    .f{ grid-column:1 / -1; }
+    .card-foot{ align-items:flex-start; flex-direction:column; }
+    .btn-reserve{ width:100%; }
+  }
+</style>
+
+
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">P</div>
+    <div>
+      <div class="brand-title">ParkFinder <span class="pill" data-i18n="header.proto">v1.0</span></div>
+      <div class="brand-sub" data-i18n="header.subtitle">Buscar · comparar · reservar estacionamientos privados en Buenos Aires</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="lang-switch" role="group" aria-label="Idioma / Language">
+      <button class="lang-btn active" type="button" data-lang="es" aria-pressed="true">ES</button>
+      <button class="lang-btn" type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+    <span class="status-dot" aria-hidden="true"></span>
+    <span class="header-count" id="totalAvail">— lugares disponibles</span>
+    <button class="btn btn-ghost btn-sm" id="statusBtn" type="button" data-i18n="header.statusBtn">Información</button>
+    <button class="btn btn-outline btn-sm" id="bookingsBtn" type="button">Mis reservas (0)</button>
+    <button class="btn btn-danger-ghost btn-sm" id="resetDemoBtn" type="button" data-i18n="header.resetBtn">Restablecer</button>
+  </div>
+</header>
+
+<div id="offlineBanner" class="banner" role="alert" hidden>
+  <div class="banner-icon" aria-hidden="true">⚡</div>
+  <div class="banner-body">
+    <strong data-i18n="banner.title">Simulación: mapa y direcciones apagados</strong>
+    <span data-i18n="banner.text">Activaste el modo de prueba. La búsqueda por zona, los precios y las reservas siguen funcionando con datos locales.</span>
+  </div>
+  <button id="offlineBannerBtn" class="banner-action" type="button" data-i18n="banner.action">Volver a conectar</button>
+</div>
+
+<main class="wrap">
+  <section class="search-card" aria-label="Buscador de estacionamientos" data-i18n-aria="search.aria">
+    <div class="search-title-row">
+      <h2 data-i18n="search.title">¿Dónde vas a estacionar?</h2>
+    </div>
+
+    <form id="searchForm" class="search-form" autocomplete="off">
+      <div class="f f-zone">
+        <label for="zoneSel" data-i18n="search.destination">Destino</label>
+        <select id="zoneSel" class="input">
+          <option value="obeliso" data-i18n="zone.obeliso">Obelisco / Microcentro</option>
+          <option value="puertomadero" data-i18n="zone.puertomadero">Puerto Madero</option>
+          <option value="palermosoho" data-i18n="zone.palermosoho">Palermo Soho</option>
+          <option value="recoleta" data-i18n="zone.recoleta">Recoleta</option>
+          <option value="hospitalitaliano" data-i18n="zone.hospitalitaliano">Hospital Italiano</option>
+          <option value="santelmo" data-i18n="zone.santelmo">San Telmo</option>
+          <option value="colegiales" data-i18n="zone.colegiales">Colegiales</option>
+          <option value="chacarita" data-i18n="zone.chacarita">Chacarita</option>
+          <option value="custom" data-i18n="search.customZone">Dirección personalizada…</option>
+        </select>
+      </div>
+      <div class="f f-addr">
+        <label for="customAddr" data-i18n="search.address">Dirección libre (geocodificación OSM)</label>
+        <input id="customAddr" class="input" type="text" placeholder="Ej. Av. Corrientes 1234, CABA" data-i18n-placeholder="search.addressPlaceholder" />
+      </div>
+      <div class="f">
+        <label for="dateInput" data-i18n="search.date">Fecha</label>
+        <input id="dateInput" class="input" type="date" />
+      </div>
+      <div class="f">
+        <label for="arrivalInput" data-i18n="search.arrival">Hora de llegada</label>
+        <input id="arrivalInput" class="input" type="time" value="10:00" />
+      </div>
+      <div class="f">
+        <label for="hoursInput" data-i18n="search.duration">Duración</label>
+        <input id="hoursInput" class="input" type="number" min="1" max="12" step="1" value="2" />
+      </div>
+      <div class="f f-submit">
+        <button class="btn btn-primary" id="searchBtn" type="submit" data-i18n="search.searchBtn">Buscar</button>
+      </div>
+    </form>
+
+    <div class="search-sub">
+      <label class="check" for="onlyAvailable">
+        <input id="onlyAvailable" type="checkbox" /> <span data-i18n="search.onlyAvailable">Solo cocheras con disponibilidad</span>
+      </label>
+      <label class="check check-warn" for="offlineSwitch">
+        <input id="offlineSwitch" type="checkbox" /> <span data-i18n="search.simulateOffline">Modo sin conexión</span>
+      </label>
+    </div>
+    <div class="dest-line" id="destLine">Destino: Obelisco / Microcentro · buscando…</div>
+  </section>
+
+  <div class="layout">
+    <section class="map-card" aria-label="Mapa de cocheras" data-i18n-aria="map.aria">
+      <div class="map-head">
+        <span class="map-title" data-i18n="map.title">Mapa</span>
+        <span class="legend"><i class="dot dot-dest"></i> <span data-i18n="map.destination">Destino</span></span>
+        <span class="legend"><i class="dot dot-car"></i> <span data-i18n="map.garage">Cochera</span></span>
+      </div>
+      <div id="map"></div>
+      <div id="mapDown" class="map-down" hidden>
+        <div class="map-down-box">
+          <strong data-i18n="map.downTitle">Mapa / Geocoding no disponibles</strong>
+          <span data-i18n="map.downText">El mapa y la búsqueda de direcciones están fuera de servicio. La lista, los precios y las reservas funcionan normalmente.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Resultados de cocheras" data-i18n-aria="results.aria">
+      <div class="panel-head">
+        <div>
+          <h2 data-i18n="results.title">Cocheras disponibles</h2>
+          <div class="muted" id="summaryLine">—</div>
+        </div>
+        <label class="sort-label" for="sortSel"><span data-i18n="results.sort">Ordenar</span>
+          <select id="sortSel" class="input input-sm" style="width:auto">
+            <option value="cercano" data-i18n="results.sortCercano">Más cercanas</option>
+            <option value="precio_asc" data-i18n="results.sortPrecioAsc">Menor precio</option>
+            <option value="precio_desc" data-i18n="results.sortPrecioDesc">Mayor precio</option>
+          </select>
+        </label>
+      </div>
+      <div id="resultsList" class="results"></div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div data-i18n="footer.text">© 2026 ParkFinder · Buenos Aires · Reservas online con confirmación inmediata</div>
+  </footer>
+</main>
+
+<!-- Modal Estado V1 (contenido dinámico) -->
+<div class="modal" id="statusModal" aria-hidden="true"></div>
+
+<!-- Modal Mis reservas (contenido dinámico) -->
+<div class="modal" id="bookingsModal" aria-hidden="true"></div>
+
+<!-- Modal QR de una reserva (contenido dinámico) -->
+<div class="modal" id="qrModal" aria-hidden="true"></div>
+
+<!-- Modal reserva (contenido dinámico) -->
+<div class="modal" id="reserveModal" aria-hidden="true"></div>
+
+<!-- Modal éxito (contenido dinámico) -->
+<div class="modal" id="successModal" aria-hidden="true"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+/* =======================================================================
+   ParkFinder V1 — prototipo funcional autocontenido
+   Datos demo con coordenadas del AMBA / CABA, Leaflet + OpenStreetMap.
+   ======================================================================= */
+
+const ZONES = [
+  { id: 'obeliso', label: 'Obelisco / Microcentro', coords: [-34.6037, -58.3816] },
+  { id: 'puertomadero', label: 'Puerto Madero', coords: [-34.6074, -58.3610] },
+  { id: 'palermosoho', label: 'Palermo Soho', coords: [-34.5885, -58.4290] },
+  { id: 'recoleta', label: 'Recoleta', coords: [-34.5956, -58.3892] },
+  { id: 'hospitalitaliano', label: 'Hospital Italiano', coords: [-34.6076, -58.4262] },
+  { id: 'santelmo', label: 'San Telmo', coords: [-34.6148, -58.3736] },
+  { id: 'colegiales', label: 'Colegiales', coords: [-34.5739, -58.4552] },
+  { id: 'chacarita', label: 'Chacarita', coords: [-34.5919, -58.4403] }
+];
+const ZONE_MAP = {};
+ZONES.forEach(function (z) { ZONE_MAP[z.id] = z; });
+
+/* Fallback local: coordenadas guardadas de zonas reales de CABA */
+const FALLBACK_COORDS = {};
+ZONES.forEach(function (z) { FALLBACK_COORDS[z.id] = z.coords.slice(); });
+FALLBACK_COORDS['obelisco'] = [-34.6037, -58.3816];
+
+const GARAGES = [
+  {
+    id: 'garage-puerto-madero',
+    name: 'Garage Puerto Madero',
+    address: 'Av. del Sol 1141, Puerto Madero, CABA',
+    lat: -34.6074, lng: -58.3610,
+    ratePerHour: 6500, totalSpaces: 120, techado: true, open24: true
+  },
+  {
+    id: 'garage-palermo-soho',
+    name: 'Garage Palermo Soho',
+    address: 'Gurruchaga 1500, Palermo Soho, CABA',
+    lat: -34.5885, lng: -58.4290,
+    ratePerHour: 5600, totalSpaces: 80, techado: true, open24: false
+  },
+  {
+    id: 'garage-obelisco',
+    name: 'Garage Obelisco Centro',
+    address: 'Av. Corrientes 1240, Microcentro, CABA',
+    lat: -34.6049, lng: -58.3778,
+    ratePerHour: 6000, totalSpaces: 150, techado: false, open24: true
+  },
+  {
+    id: 'garage-recoleta',
+    name: 'Garage Recoleta Centro',
+    address: 'Av. Santa Fe 1500, Recoleta, CABA',
+    lat: -34.5975, lng: -58.3895,
+    ratePerHour: 6200, totalSpaces: 90, techado: true, open24: true
+  },
+  {
+    id: 'parqueon-hospital-italiano',
+    name: 'Parqueón Hospital Italiano',
+    address: 'Tte. Gral. Perón 4190, Almagro, CABA',
+    lat: -34.6076, lng: -58.4262,
+    ratePerHour: 4800, totalSpaces: 100, techado: false, open24: true
+  },
+  {
+    id: 'parqueon-san-telmo',
+    name: 'Parqueón San Telmo',
+    address: 'Av. Defensa 830, San Telmo, CABA',
+    lat: -34.6146, lng: -58.3730,
+    ratePerHour: 4500, totalSpaces: 60, techado: false, open24: true
+  },
+  {
+    id: 'garage-colegiales',
+    name: 'Garage Colegiales',
+    address: 'Av. Federico Lacroze 2200, Colegiales, CABA',
+    lat: -34.5739, lng: -58.4552,
+    ratePerHour: 3900, totalSpaces: 70, techado: true, open24: false
+  },
+  {
+    id: 'garage-chacarita',
+    name: 'Garage Chacarita',
+    address: 'Av. Corrientes 6150, Chacarita, CABA',
+    lat: -34.5919, lng: -58.4403,
+    ratePerHour: 3500, totalSpaces: 55, techado: false, open24: true
+  }
+];
+
+const INITIAL_INVENTORY = {};
+GARAGES.forEach(function (g) { INITIAL_INVENTORY[g.id] = g.totalSpaces; });
+
+const LS = {
+  inventory: 'parkfinder.v1.inventory',
+  bookings: 'parkfinder.v1.bookings',
+  zoneCoords: 'parkfinder.v1.zoneCoords',
+  offline: 'parkfinder.v1.offline',
+  lang: 'parkfinder.v1.lang'
+};
+
+const WALK_SPEED_KMH = 5;   /* caminata urbana: 12 min por km */
+const EARTH_RADIUS_KM = 6371;
+
+const state = {
+  lang: 'es',
+  date: '',
+  arrival: '10:00',
+  hours: 2,
+  showAll: true,
+  sort: 'cercano',
+  offline: false,
+  destCoords: null,
+  destLabel: '',
+  zoneId: 'obeliso',
+  results: [],
+  bookings: [],
+  map: null,
+  layerGroup: null,
+  priceMarkers: [],
+  declutterWired: false,
+  currentGarage: null,
+  lastBooking: null,
+  qrBooking: null,
+  inv: null
+};
+
+/* ------------------------- i18n ------------------------- */
+
+const I18N = {
+  es: {
+    meta: {
+      title: 'ParkFinder · Estacionamientos privados en Buenos Aires'
+    },
+    zone: {
+      obeliso: 'Obelisco / Microcentro',
+      puertomadero: 'Puerto Madero',
+      palermosoho: 'Palermo Soho',
+      recoleta: 'Recoleta',
+      hospitalitaliano: 'Hospital Italiano',
+      santelmo: 'San Telmo',
+      colegiales: 'Colegiales',
+      chacarita: 'Chacarita'
+    },
+    header: {
+      subtitle: 'Buscar · comparar · reservar estacionamientos privados en Buenos Aires',
+      proto: 'v1.0',
+      spotsDemo: '{n} lugares disponibles',
+      statusBtn: 'Información',
+      bookingsBtn: 'Mis reservas ({n})',
+      simulateBtn: 'Probar disponibilidad',
+      resetBtn: 'Restablecer'
+    },
+    badges: {
+      functional: 'Incluido',
+      simulated: 'Confirmación',
+      conceptual: 'Cobertura',
+      funcUpper: 'INCLUIDO',
+      simUpper: 'CONFIRMACIÓN',
+      concUpper: 'COBERTURA'
+    },
+    banner: {
+      title: 'Modo sin conexión',
+      text: 'El mapa y la búsqueda de direcciones no están disponibles. La búsqueda por zona, los precios y las reservas siguen funcionando.',
+      action: 'Volver a conectar'
+    },
+    search: {
+      title: '¿Dónde vas a estacionar?',
+      pillSearch: 'Búsqueda por zona',
+      pillPay: 'Reserva online',
+      destination: 'Destino',
+      address: 'Dirección libre (geocodificación OSM)',
+      addressPlaceholder: 'Ej. Av. Corrientes 1234, CABA',
+      date: 'Fecha',
+      arrival: 'Hora de llegada',
+      duration: 'Duración',
+      customZone: 'Dirección personalizada…',
+      searchBtn: 'Buscar',
+      onlyAvailable: 'Solo cocheras con disponibilidad',
+      simulateOffline: 'Modo sin conexión',
+      searching: 'Buscando “{address}” en OpenStreetMap…',
+      aria: 'Buscador de estacionamientos'
+    },
+    map: {
+      title: 'Mapa',
+      destination: 'Destino',
+      garage: 'Cochera',
+      downTitle: 'Mapa no disponible',
+      downText: 'El mapa y la búsqueda de direcciones están fuera de servicio. La lista, los precios y las reservas funcionan normalmente.',
+      reserveFromMap: 'Reservar desde el mapa',
+      walkMeta: '{km} km · {min} min caminando',
+      destPopup: 'Destino de búsqueda',
+      unavailableTitle: 'No pudimos cargar el mapa.',
+      unavailableText: 'La búsqueda, los precios y las reservas siguen funcionando.',
+      aria: 'Mapa de cocheras'
+    },
+    results: {
+      title: 'Cocheras disponibles',
+      summary: '{count} cocheras · orden: {sort}',
+      sort: 'Ordenar',
+      sortCercano: 'Más cercanas',
+      sortPrecioAsc: 'Menor precio',
+      sortPrecioDesc: 'Mayor precio',
+      noResultsTitle: 'No hay cocheras para mostrar',
+      noResultsText: 'Desmarcá “Solo cocheras con disponibilidad”, cambiá de zona o restablecé la búsqueda.',
+      aria: 'Resultados de cocheras'
+    },
+    sort: {
+      cercano: 'más cercanas',
+      precio_asc: 'menor precio',
+      precio_desc: 'mayor precio'
+    },
+    card: {
+      distance: 'Distancia',
+      walking: 'Caminando',
+      available: 'Disponibles',
+      totalFor: 'Total {hours} h',
+      covered: 'Techado',
+      uncovered: 'Sin techo',
+      open24: 'Abierto 24 hs',
+      daytime: 'Horario diurno',
+      spotsBadge: '{n} cupo(s)',
+      reserve: 'Reservar',
+      noSpots: 'Sin cupos',
+      perHour: 'por hora'
+    },
+    destLine: {
+      zone: 'Zona guardada',
+      fallback: 'Modo offline'
+    },
+    reserve: {
+      title: 'Confirmar reserva',
+      date: 'Fecha',
+      time: 'Horario',
+      duration: 'Duración',
+      spotsNow: 'Lugares ahora',
+      payPrefix: 'Total a abonar ·',
+      payDetail: '({rate}/h × {hours} h)',
+      plateLabel: 'Patente del vehículo',
+      regen: 'Generar otra',
+      antiDouble: 'Reserva inmediata',
+      antiDoubleNote: 'Reserva inmediata con confirmación garantizada.',
+      confirm: 'Confirmar reserva',
+      confirmNoSpots: 'Sin lugares'
+    },
+    success: {
+      title: 'Reserva confirmada',
+      subtitle: 'Presentá este código QR al ingresar a la cochera.',
+      bookingId: 'Booking ID',
+      garage: 'Cochera',
+      address: 'Dirección',
+      date: 'Fecha',
+      time: 'Horario',
+      plate: 'Patente',
+      total: 'Total',
+      qrCaption: 'Código válido para esta reserva.',
+      qrAria: 'Código QR de la reserva {id}'
+    },
+    bookings: {
+      title: 'Mis reservas',
+      subtitle: 'Todas tus reservas en un solo lugar. Gestioná tus comprobantes y cancelaciones.',
+      emptyTitle: 'Todavía no hay reservas',
+      emptyText: 'Buscá una cochera, reservá y la reserva va a aparecer acá.',
+      garage: 'Cochera',
+      bookingId: 'Booking ID',
+      dateTime: 'Fecha y horario',
+      plate: 'Patente',
+      total: 'Total',
+      viewQr: 'Ver QR',
+      cancel: 'Cancelar reserva',
+      canceled: 'Reserva {id} cancelada. Se devolvió 1 lugar a {garage}.',
+      qrTitle: 'QR de la reserva',
+      qrSubtitle: 'Presentá este código al ingresar a la cochera.',
+      back: 'Volver a mis reservas',
+      close: 'Cerrar'
+    },
+    status: {
+      title: 'Cómo funciona ParkFinder',
+      subtitle: 'Encontrá, compará y reservá estacionamientos en Buenos Aires. Tu reserva queda confirmada al instante.',
+      functionalTitle: 'Qué podés hacer',
+      f1: 'Buscá por zona, horario y duración. También podés ingresar una dirección libre para ubicar la cochera más cercana.',
+      f2: 'Compará distancia, tiempo de caminata y precio total antes de elegir.',
+      f3: 'Filtrá por disponibilidad, ordená por cercanía o precio y explorá las cocheras en el mapa.',
+      f4: 'Confirmá con tu patente y recibí un Booking ID y un código QR para ingresar.',
+      f5: 'Gestioná tus reservas desde “Mis reservas” y cancelá cuando lo necesites.',
+      simulatedTitle: 'Confirmación y pagos',
+      s1: 'Cada reserva genera un comprobante con Booking ID y código QR, listo para presentar en la cochera.',
+      s2: 'El importe total se calcula según la tarifa por hora y la duración elegida.',
+      conceptualTitle: 'Cobertura',
+      c1: 'Zonas disponibles: Microcentro, Puerto Madero, Palermo Soho, Recoleta, Almagro, San Telmo, Colegiales y Chacarita.',
+      c2: 'Los valores y la disponibilidad pueden variar según el operador de cada cochera.',
+      note: 'Los precios son orientativos y pueden variar por cochera. El total se muestra antes de confirmar.',
+      demoTitle: 'Recorrido rápido',
+      demo1: 'Elegí una zona, la duración y presioná Buscar.',
+      demo2: 'Ordená por precio o cercanía y abrí un marcador del mapa.',
+      demo3: 'Confirmá la reserva: obtenés Booking ID y código QR al instante.',
+      demo4: 'Revisá tus comprobantes en “Mis reservas”.',
+      demo5: 'Cancelá una reserva desde esa vista si cambiás de plan.',
+      demo6: 'Usá Restablecer para volver al estado inicial.',
+      testBtn: 'Probar disponibilidad',
+      testHint: 'Herramienta de prueba: marca una cochera sin lugares disponibles.',
+      understood: 'Entendido'
+    },
+    toast: {
+      noSpotsGarage: 'Sin lugares en {garage}. Probá otra cochera o restablecé la búsqueda.',
+      noSpotsShort: 'Sin lugares en {garage}.',
+      chooseGarage: 'Elegí una cochera antes de reservar.',
+      race: 'Sin lugares: la cochera se completó mientras confirmabas. Probá otra.',
+      reserved: 'Reserva confirmada. Se descontó 1 lugar del inventario.',
+      simulateNone: 'Todos los lugares están ocupados. Restablecé para probar de nuevo.',
+      simulateDone: 'Se completó el último lugar de {garage} (quedaban {n}). La cochera ya no muestra disponibilidad.',
+      reset: 'Estado inicial restablecido y reservas borradas.',
+      copied: 'Booking ID copiado al portapapeles.',
+      copiedFallback: 'Booking ID copiado.',
+      copyManual: 'Copiá manualmente: {id}',
+      offlineOn: 'Modo sin conexión activado. La búsqueda por zona y las reservas siguen funcionando.',
+      offlineOff: 'Mapa y direcciones disponibles nuevamente.',
+      geocodeFallback: 'No se pudo geocodificar la dirección. Se usa la última ubicación guardada.',
+      langChanged: 'Idioma cambiado a español.'
+    },
+    common: {
+      close: 'Cerrar',
+      cancel: 'Cancelar',
+      done: 'Listo',
+      copy: 'Copiar',
+      confirmed: 'Confirmada',
+      simulated: 'Confirmada',
+      hourShort: 'h'
+    },
+    footer: {
+      text: '© 2026 ParkFinder · Buenos Aires · Reservas online con confirmación inmediata'
+    }
+
+  },
+  en: {
+    meta: {
+      title: 'ParkFinder · Private parking in Buenos Aires'
+    },
+    zone: {
+      obeliso: 'Obelisco / Microcentro',
+      puertomadero: 'Puerto Madero',
+      palermosoho: 'Palermo Soho',
+      recoleta: 'Recoleta',
+      hospitalitaliano: 'Italian Hospital',
+      santelmo: 'San Telmo',
+      colegiales: 'Colegiales',
+      chacarita: 'Chacarita'
+    },
+    header: {
+      subtitle: 'Find · compare · book private parking in Buenos Aires',
+      proto: 'v1.0',
+      spotsDemo: '{n} spots available',
+      statusBtn: 'Info',
+      bookingsBtn: 'My bookings ({n})',
+      simulateBtn: 'Test availability',
+      resetBtn: 'Reset'
+    },
+    badges: {
+      functional: 'Included',
+      simulated: 'Confirmation',
+      conceptual: 'Coverage',
+      funcUpper: 'INCLUDED',
+      simUpper: 'CONFIRMATION',
+      concUpper: 'COVERAGE'
+    },
+    banner: {
+      title: 'Offline mode',
+      text: 'The map and address search are unavailable. Zone search, prices and bookings keep working.',
+      action: 'Reconnect'
+    },
+    search: {
+      title: 'Where are you parking?',
+      pillSearch: 'Zone search',
+      pillPay: 'Online booking',
+      destination: 'Destination',
+      address: 'Free address (OSM geocoding)',
+      addressPlaceholder: 'e.g. Av. Corrientes 1234, CABA',
+      date: 'Date',
+      arrival: 'Arrival time',
+      duration: 'Duration',
+      customZone: 'Custom address…',
+      searchBtn: 'Search',
+      onlyAvailable: 'Only garages with availability',
+      simulateOffline: 'Offline mode',
+      searching: 'Searching “{address}” on OpenStreetMap…',
+      aria: 'Parking search'
+    },
+    map: {
+      title: 'Map',
+      destination: 'Destination',
+      garage: 'Garage',
+      downTitle: 'Map unavailable',
+      downText: 'The map and address search are out of service. The list, prices and bookings keep working normally.',
+      reserveFromMap: 'Book from the map',
+      walkMeta: '{km} km · {min} min walk',
+      destPopup: 'Search destination',
+      unavailableTitle: 'We couldn’t load the map.',
+      unavailableText: 'Search, prices and bookings keep working.',
+      aria: 'Parking map'
+    },
+    results: {
+      title: 'Available garages',
+      summary: '{count} garages · sorted by: {sort}',
+      sort: 'Sort',
+      sortCercano: 'Nearest first',
+      sortPrecioAsc: 'Lowest price',
+      sortPrecioDesc: 'Highest price',
+      noResultsTitle: 'No garages to show',
+      noResultsText: 'Uncheck “Only garages with availability”, change the zone or reset the search.',
+      aria: 'Garage results'
+    },
+    sort: {
+      cercano: 'nearest',
+      precio_asc: 'lowest price',
+      precio_desc: 'highest price'
+    },
+    card: {
+      distance: 'Distance',
+      walking: 'Walking',
+      available: 'Available',
+      totalFor: 'Total {hours} h',
+      covered: 'Covered',
+      uncovered: 'Open-air',
+      open24: 'Open 24 h',
+      daytime: 'Daytime only',
+      spotsBadge: '{n} spot(s)',
+      reserve: 'Book',
+      noSpots: 'No spots',
+      perHour: 'per hour'
+    },
+    destLine: {
+      zone: 'Saved zone',
+      fallback: 'Offline mode'
+    },
+    reserve: {
+      title: 'Confirm booking',
+      date: 'Date',
+      time: 'Time',
+      duration: 'Duration',
+      spotsNow: 'Spots now',
+      payPrefix: 'Total due ·',
+      payDetail: '({rate}/h × {hours} h)',
+      plateLabel: 'License plate',
+      regen: 'Generate another',
+      antiDouble: 'Instant booking',
+      antiDoubleNote: 'Instant booking with guaranteed confirmation.',
+      confirm: 'Confirm booking',
+      confirmNoSpots: 'No spots'
+    },
+    success: {
+      title: 'Booking confirmed',
+      subtitle: 'Show this QR code at the garage entrance.',
+      bookingId: 'Booking ID',
+      garage: 'Garage',
+      address: 'Address',
+      date: 'Date',
+      time: 'Time',
+      plate: 'Plate',
+      total: 'Total',
+      qrCaption: 'Valid code for this booking.',
+      qrAria: 'QR code for booking {id}'
+    },
+    bookings: {
+      title: 'My bookings',
+      subtitle: 'All your bookings in one place. Manage your receipts and cancellations.',
+      emptyTitle: 'No bookings yet',
+      emptyText: 'Find a garage, book it and it will show up here.',
+      garage: 'Garage',
+      bookingId: 'Booking ID',
+      dateTime: 'Date and time',
+      plate: 'Plate',
+      total: 'Total',
+      viewQr: 'View QR',
+      cancel: 'Cancel booking',
+      canceled: 'Booking {id} canceled. 1 spot was returned to {garage}.',
+      qrTitle: 'Booking QR code',
+      qrSubtitle: 'Show this code at the garage entrance.',
+      back: 'Back to my bookings',
+      close: 'Close'
+    },
+    status: {
+      title: 'How ParkFinder works',
+      subtitle: 'Find, compare and book parking in Buenos Aires. Your booking is confirmed instantly.',
+      functionalTitle: 'What you can do',
+      f1: 'Search by zone, time and duration. You can also enter a free address to find the nearest garage.',
+      f2: 'Compare distance, walking time and total price before choosing.',
+      f3: 'Filter by availability, sort by distance or price and explore garages on the map.',
+      f4: 'Confirm with your license plate and get a Booking ID plus a QR code to enter.',
+      f5: 'Manage your bookings from “My bookings” and cancel whenever you need to.',
+      simulatedTitle: 'Confirmation and payments',
+      s1: 'Every booking creates a receipt with a Booking ID and QR code, ready to show at the garage.',
+      s2: 'The total is calculated from the hourly rate and the duration you choose.',
+      conceptualTitle: 'Coverage',
+      c1: 'Available zones: Microcentro, Puerto Madero, Palermo Soho, Recoleta, Almagro, San Telmo, Colegiales and Chacarita.',
+      c2: 'Prices and availability may vary by garage operator.',
+      note: 'Prices are indicative and may vary by garage. The total is always shown before you confirm.',
+      demoTitle: 'Quick tour',
+      demo1: 'Choose a zone, set the duration and press Search.',
+      demo2: 'Sort by price or distance and open a map marker.',
+      demo3: 'Confirm the booking: you get a Booking ID and QR code instantly.',
+      demo4: 'Check your receipts in “My bookings”.',
+      demo5: 'Cancel a booking there if your plans change.',
+      demo6: 'Use Reset to return to the initial state.',
+      testBtn: 'Test availability',
+      testHint: 'Test tool: marks a garage as full.',
+      understood: 'Got it'
+    },
+    toast: {
+      noSpotsGarage: 'No spots at {garage}. Try another garage or reset the search.',
+      noSpotsShort: 'No spots at {garage}.',
+      chooseGarage: 'Choose a garage before booking.',
+      race: 'No spots: the garage filled up while you were confirming. Try another one.',
+      reserved: 'Booking confirmed. 1 spot was deducted from inventory.',
+      simulateNone: 'All spots are taken. Reset to try again.',
+      simulateDone: 'The last spot at {garage} was just taken ({n} were left). The garage now shows no availability.',
+      reset: 'Initial state restored and local bookings cleared.',
+      copied: 'Booking ID copied to clipboard.',
+      copiedFallback: 'Booking ID copied.',
+      copyManual: 'Copy manually: {id}',
+      offlineOn: 'Offline mode on. Zone search and bookings keep working.',
+      offlineOff: 'Map and address search available again.',
+      geocodeFallback: 'Could not geocode the address. Using the last saved location.',
+      langChanged: 'Language switched to English.'
+    },
+    common: {
+      close: 'Close',
+      cancel: 'Cancel',
+      done: 'Done',
+      copy: 'Copy',
+      confirmed: 'Confirmed',
+      simulated: 'Confirmed',
+      hourShort: 'h'
+    },
+    footer: {
+      text: '© 2026 ParkFinder · Buenos Aires · Online booking with instant confirmation'
+    }
+
+  }
+};
+
+function t(key, vars) {
+  function resolve(dict) {
+    return key.split('.').reduce(function (node, part) {
+      return node && typeof node === 'object' ? node[part] : undefined;
+    }, dict);
+  }
+  let value = resolve(I18N[state.lang] || I18N.es);
+  if (typeof value !== 'string') value = resolve(I18N.es);
+  if (typeof value !== 'string') return key;
+  if (vars) {
+    value = value.replace(/\{(\w+)\}/g, function (match, name) {
+      return vars[name] !== undefined ? String(vars[name]) : match;
+    });
+  }
+  return value;
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = state.lang;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (node) {
+    node.textContent = t(node.getAttribute('data-i18n'));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-placeholder]'), function (node) {
+    node.setAttribute('placeholder', t(node.getAttribute('data-i18n-placeholder')));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (node) {
+    node.setAttribute('aria-label', t(node.getAttribute('data-i18n-aria')));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.lang-btn'), function (btn) {
+    const active = btn.getAttribute('data-lang') === state.lang;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  document.title = t('meta.title');
+}
+
+function setLanguage(code) {
+  if (code !== 'es' && code !== 'en') return;
+  const reserveOpen = q('#reserveModal').classList.contains('show');
+  const currentPlate = reserveOpen && q('#plateInput') ? q('#plateInput').value : '';
+  state.lang = code;
+  lsSet(LS.lang, code);
+  applyStaticTranslations();
+  if (state.zoneId && state.zoneId !== 'custom') {
+    state.destLabel = t('zone.' + state.zoneId);
+  }
+  updateDestLine();
+  renderResults(false);
+  if (q('#statusModal').classList.contains('show')) renderStatusModal();
+  if (reserveOpen && state.currentGarage) {
+    openReserveModal(state.currentGarage);
+    if (currentPlate && q('#plateInput')) q('#plateInput').value = currentPlate;
+  }
+  if (q('#successModal').classList.contains('show') && state.lastBooking) openSuccessModal(state.lastBooking);
+  updateBookingsCount();
+  if (q('#bookingsModal').classList.contains('show')) renderBookingsModal();
+  if (q('#qrModal').classList.contains('show') && state.qrBooking) openBookingQr(state.qrBooking);
+  toast(t('toast.langChanged'), 'ok');
+}
+
+/* ------------------------- utilidades ------------------------- */
+
+function q(selector, root) {
+  return (root || document).querySelector(selector);
+}
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function todayStr() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
+
+function timeAdd(time, hours) {
+  const parts = String(time || '10:00').split(':').map(Number);
+  const total = (parts[0] || 0) * 60 + (parts[1] || 0) + hours * 60;
+  const hh = Math.floor(total / 60) % 24;
+  const mm = total % 60;
+  return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+}
+
+/* Formato de precios en pesos argentinos: ARS 6.200 (es-AR) / ARS 6,200 (en-US). */
+function formatNumber(value) {
+  const n = Number(value) || 0;
+  const locale = state.lang === 'en' ? 'en-US' : 'es-AR';
+  return n.toLocaleString(locale, { maximumFractionDigits: 0 });
+}
+
+function formatArs(value) {
+  return 'ARS ' + formatNumber(value);
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+  });
+}
+
+function toast(message, type) {
+  const node = q('#toast');
+  if (!node) return;
+  node.textContent = message;
+  node.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function () { node.classList.remove('show'); }, 3800);
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const toRad = function (deg) { return (deg * Math.PI) / 180; };
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+function walkingMinutes(km) {
+  return (km / WALK_SPEED_KMH) * 60;
+}
+
+/* ------------------------- persistencia ------------------------- */
+
+function lsGet(key) {
+  try { return localStorage.getItem(key); } catch (err) { return null; }
+}
+function lsSet(key, value) {
+  try { localStorage.setItem(key, value); } catch (err) { /* sin storage: memoria */ }
+}
+
+function getInventory() {
+  if (state.inv) return state.inv;
+  let stored = null;
+  try { stored = JSON.parse(lsGet(LS.inventory) || 'null'); } catch (err) { stored = null; }
+  const inv = Object.assign({}, INITIAL_INVENTORY);
+  if (stored && typeof stored === 'object') {
+    Object.keys(INITIAL_INVENTORY).forEach(function (id) {
+      const value = stored[id];
+      if (Number.isFinite(value)) {
+        inv[id] = clamp(Math.floor(value), 0, INITIAL_INVENTORY[id]);
+      }
+    });
+  }
+  state.inv = inv;
+  return inv;
+}
+
+function persistInventory() {
+  lsSet(LS.inventory, JSON.stringify(getInventory()));
+}
+
+function availabilityOf(garage) {
+  const inv = getInventory();
+  const value = inv[garage.id];
+  return Number.isFinite(value) ? Math.max(0, value) : garage.totalSpaces;
+}
+
+function setInventory(id, value) {
+  const inv = getInventory();
+  inv[id] = Math.max(0, Math.floor(value));
+  persistInventory();
+}
+
+function getBookings() {
+  let list = [];
+  try { list = JSON.parse(lsGet(LS.bookings) || '[]'); } catch (err) { list = []; }
+  return Array.isArray(list) ? list : [];
+}
+
+function saveBookings(list) {
+  state.bookings = list;
+  lsSet(LS.bookings, JSON.stringify(list));
+}
+
+function updateBookingsCount() {
+  const btn = q('#bookingsBtn');
+  if (!btn) return;
+  const list = getBookings();
+  state.bookings = list;
+  btn.textContent = t('header.bookingsBtn', { n: list.length });
+}
+
+function totalAvailable() {
+  return GARAGES.reduce(function (acc, g) { return acc + availabilityOf(g); }, 0);
+}
+
+/* ------------------------- geocoding + fallback ------------------------- */
+
+FALLBACK_COORDS['microcentro'] = ZONE_MAP['obeliso'].coords.slice();
+FALLBACK_COORDS['palermo soho'] = ZONE_MAP['palermosoho'].coords.slice();
+FALLBACK_COORDS['puerto madero'] = ZONE_MAP['puertomadero'].coords.slice();
+FALLBACK_COORDS['hospital italiano'] = ZONE_MAP['hospitalitaliano'].coords.slice();
+FALLBACK_COORDS['san telmo'] = ZONE_MAP['santelmo'].coords.slice();
+FALLBACK_COORDS['recoleta'] = ZONE_MAP['recoleta'].coords.slice();
+FALLBACK_COORDS['colegiales'] = ZONE_MAP['colegiales'].coords.slice();
+FALLBACK_COORDS['chacarita'] = ZONE_MAP['chacarita'].coords.slice();
+
+function loadZoneCache() {
+  let cache = {};
+  try { cache = JSON.parse(lsGet(LS.zoneCoords) || '{}'); } catch (err) { cache = {}; }
+  return cache && typeof cache === 'object' ? cache : {};
+}
+
+function saveZoneCache(cache) {
+  lsSet(LS.zoneCoords, JSON.stringify(cache));
+}
+
+/* Geocodificación vía Nominatim; si la red falla o el switch de caída está
+   activo, devuelve coordenadas guardadas (fallback local). */
+async function geocodeAddress(rawAddress) {
+  const address = String(rawAddress || '').trim();
+  if (!address) return null;
+  const key = address.toLowerCase();
+  const cache = loadZoneCache();
+
+  if (Array.isArray(cache[key]) && cache[key].length === 2) {
+    return [Number(cache[key][0]), Number(cache[key][1])];
+  }
+
+  if (!state.offline && typeof fetch === 'function') {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(function () { controller.abort(); }, 6000);
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=es&q=' +
+        encodeURIComponent(address);
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' }
+      });
+      clearTimeout(timer);
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data[0]) {
+          const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+          if (Number.isFinite(coords[0]) && Number.isFinite(coords[1])) {
+            cache[key] = coords;
+            saveZoneCache(cache);
+            return coords;
+          }
+        }
+      }
+    } catch (err) {
+      /* red caída: se resuelve por fallback local abajo */
+    }
+  }
+
+  const zoneFallback = FALLBACK_COORDS[key];
+  if (Array.isArray(zoneFallback)) return zoneFallback.slice();
+  return null;
+}
+
+/* ------------------------- estado del formulario ------------------------- */
+
+function readForm() {
+  state.date = q('#dateInput').value || todayStr();
+  state.arrival = q('#arrivalInput').value || '10:00';
+  let hours = parseInt(q('#hoursInput').value, 10);
+  if (!Number.isFinite(hours)) hours = 2;
+  state.hours = clamp(hours, 1, 12);
+  q('#hoursInput').value = state.hours;
+  state.showAll = !q('#onlyAvailable').checked;
+  state.sort = q('#sortSel').value || 'cercano';
+}
+
+function updateDestLine() {
+  const line = q('#destLine');
+  if (!line) return;
+  const fallbackBadge = state.offline
+    ? ' · <span class="badge badge-simulado">' + escapeHtml(t('destLine.fallback')) + '</span>'
+    : '';
+  line.innerHTML =
+    escapeHtml(t('search.destination')) + ': <strong>' +
+    escapeHtml(state.destLabel || t('destLine.zone')) + '</strong>' +
+    ' · ' + escapeHtml(state.date) +
+    ' · ' + state.arrival.slice(0, 5) + ' → ' + timeAdd(state.arrival, state.hours) +
+    ' · ' + state.hours + ' ' + t('common.hourShort') + fallbackBadge;
+}
+
+/* ------------------------- cálculo de resultados ------------------------- */
+
+function distanceTo(garage) {
+  if (!state.destCoords) return 0;
+  return haversineKm(state.destCoords[0], state.destCoords[1], garage.lat, garage.lng);
+}
+
+function costOf(garage) {
+  return garage.ratePerHour * state.hours;
+}
+
+function sortGarages(list) {
+  const mode = state.sort;
+  return list.slice().sort(function (a, b) {
+    if (mode === 'precio_asc') {
+      const diff = costOf(a) - costOf(b);
+      return diff !== 0 ? diff : distanceTo(a) - distanceTo(b);
+    }
+    if (mode === 'precio_desc') {
+      const diff = costOf(b) - costOf(a);
+      return diff !== 0 ? diff : distanceTo(a) - distanceTo(b);
+    }
+    const dist = distanceTo(a) - distanceTo(b);
+    if (Math.abs(dist) > 1e-9) return dist;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function buildCard(garage) {
+  const avail = availabilityOf(garage);
+  const km = state.destCoords ? distanceTo(garage) : null;
+  const cost = costOf(garage);
+  const card = document.createElement('article');
+  card.className = 'card' + (avail === 0 ? ' unavailable' : '');
+  card.setAttribute('data-garage', garage.id);
+
+  card.innerHTML =
+    '<div class="card-top">' +
+      '<div>' +
+        '<h3>' + escapeHtml(garage.name) + '</h3>' +
+        '<div class="addr">' + escapeHtml(garage.address) + '</div>' +
+      '</div>' +
+      '<div class="price">' +
+        '<strong>' + formatArs(garage.ratePerHour) + '</strong>' +
+        '<span>' + escapeHtml(t('card.perHour')) + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="stats">' +
+      '<div class="stat"><span class="stat-label">' + escapeHtml(t('card.distance')) + '</span><strong>' +
+        (km == null ? '—' : km.toFixed(2) + ' km') + '</strong></div>' +
+      '<div class="stat"><span class="stat-label">' + escapeHtml(t('card.walking')) + '</span><strong>' +
+        (km == null ? '—' : Math.round(walkingMinutes(km)) + ' min') + '</strong></div>' +
+      '<div class="stat"><span class="stat-label">' + escapeHtml(t('card.available')) + '</span><strong class="' +
+        (avail === 0 ? 'danger' : '') + '">' + avail + ' / ' + garage.totalSpaces + '</strong></div>' +
+      '<div class="stat"><span class="stat-label">' + escapeHtml(t('card.totalFor', { hours: state.hours })) + '</span><strong class="em">' + formatArs(cost) + '</strong></div>' +
+    '</div>' +
+    '<div class="tags">' +
+      '<span class="tag">' + escapeHtml(garage.techado ? t('card.covered') : t('card.uncovered')) + '</span>' +
+      '<span class="tag">' + escapeHtml(garage.open24 ? t('card.open24') : t('card.daytime')) + '</span>' +
+      (avail === 0
+        ? '<span class="badge badge-simulado">' + escapeHtml(t('card.noSpots')) + '</span>'
+        : '<span class="badge badge-func">' + escapeHtml(t('card.spotsBadge', { n: avail })) + '</span>') +
+    '</div>' +
+    '<div class="card-foot">' +
+      '<span class="slot">' + state.arrival.slice(0, 5) + ' → ' + timeAdd(state.arrival, state.hours) + ' · ' + state.hours + ' ' + t('common.hourShort') + '</span>' +
+      '<button class="btn-reserve" type="button" ' + (avail === 0 ? 'disabled' : '') + '>' +
+        escapeHtml(avail === 0 ? t('card.noSpots') : t('card.reserve')) +
+      '</button>' +
+    '</div>';
+
+  function tryOpen(event) {
+    if (event) event.stopPropagation();
+    if (availabilityOf(garage) <= 0) {
+      toast(t('toast.noSpotsGarage', { garage: garage.name }), 'warn');
+      return;
+    }
+    selectGarage(garage);
+  }
+
+  card.addEventListener('click', tryOpen);
+  const reserveBtn = card.querySelector('.btn-reserve');
+  if (reserveBtn) reserveBtn.addEventListener('click', tryOpen);
+  return card;
+}
+
+function renderResults(recenter) {
+  readForm();
+  updateDestLine();
+
+  const wrap = q('#resultsList');
+  wrap.innerHTML = '';
+  state.results = [];
+
+  sortGarages(GARAGES).forEach(function (garage) {
+    const avail = availabilityOf(garage);
+    if (!state.showAll && avail <= 0) return;
+    state.results.push(garage);
+    wrap.appendChild(buildCard(garage));
+  });
+
+  if (state.results.length === 0) {
+    wrap.innerHTML =
+      '<div class="empty-state"><strong>' + escapeHtml(t('results.noResultsTitle')) + '</strong>' +
+      escapeHtml(t('results.noResultsText')) + '</div>';
+  }
+
+  q('#summaryLine').textContent = t('results.summary', {
+    count: state.results.length,
+    sort: t('sort.' + state.sort)
+  });
+  q('#totalAvail').textContent = t('header.spotsDemo', { n: totalAvailable() });
+
+  renderMap(!!recenter);
+}
+
+/* ------------------------- mapa Leaflet ------------------------- */
+
+function renderMap(recenter) {
+  const mapEl = q('#map');
+  if (!mapEl) return;
+
+  if (!window.L) {
+    mapEl.innerHTML = '<div class="map-fallback">' +
+      escapeHtml(t('map.unavailableTitle')) + '<br>' +
+      escapeHtml(t('map.unavailableText')) + '</div>';
+    return;
+  }
+
+  if (!state.map) {
+    state.map = L.map(mapEl, { zoomControl: false, scrollWheelZoom: true })
+      .setView(state.destCoords || [-34.6037, -58.3816], 13);
+    L.control.zoom({ position: 'topright' }).addTo(state.map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+    }).addTo(state.map);
+    state.layerGroup = L.layerGroup().addTo(state.map);
+  }
+  if (!state.layerGroup) {
+    state.layerGroup = L.layerGroup().addTo(state.map);
+  }
+
+  const map = state.map;
+  const group = state.layerGroup;
+  group.clearLayers();
+  state.priceMarkers = [];
+
+  if (state.destCoords) {
+    const destIcon = L.divIcon({
+      className: 'dest-marker-icon',
+      html: '<div class="dest-marker">' + escapeHtml(t('map.destination').toUpperCase()) + '</div>',
+      iconSize: [70, 24],
+      iconAnchor: [35, 12]
+    });
+    L.marker(state.destCoords, { icon: destIcon, zIndexOffset: 1000, title: t('map.destPopup') })
+      .bindPopup('<strong>' + escapeHtml(t('map.destPopup')) + '</strong>')
+      .addTo(group);
+  }
+
+  state.results.forEach(function (garage) {
+    const avail = availabilityOf(garage);
+    const km = state.destCoords ? distanceTo(garage) : null;
+    const popup =
+      '<div class="map-popup">' +
+        '<strong>' + escapeHtml(garage.name) + '</strong>' +
+        '<div class="mp-addr">' + escapeHtml(garage.address) + '</div>' +
+        '<div class="mp-price">' + formatArs(garage.ratePerHour) + '/h · ' +
+          escapeHtml(t('card.spotsBadge', { n: avail })) + '</div>' +
+        (km == null ? '' : '<div class="mp-meta">' +
+          escapeHtml(t('map.walkMeta', { km: km.toFixed(2), min: Math.round(walkingMinutes(km)) })) + '</div>') +
+        '<button class="mp-reserve" type="button" data-garage="' + garage.id + '" ' +
+          (avail === 0 ? 'disabled' : '') + '>' +
+          escapeHtml(avail === 0 ? t('card.noSpots') : t('map.reserveFromMap')) +
+        '</button>' +
+      '</div>';
+
+    const priceIcon = L.divIcon({
+      className: 'price-marker-icon',
+      html: '<div class="price-marker' + (avail === 0 ? ' is-zero' : '') + '">$' +
+        formatNumber(garage.ratePerHour) + '<small>/h</small></div>',
+      iconSize: [74, 30],
+      iconAnchor: [37, 30],
+      popupAnchor: [0, -30]
+    });
+    const dotIcon = L.divIcon({
+      className: 'price-dot-icon',
+      html: '<div class="price-dot"></div>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -10]
+    });
+
+    const marker = L.marker([garage.lat, garage.lng], {
+      icon: priceIcon,
+      riseOnHover: true,
+      title: garage.name + ' · ' + formatArs(garage.ratePerHour) + '/h'
+    });
+    marker.bindPopup(popup).addTo(group);
+    state.priceMarkers.push({ marker: marker, garage: garage, priceIcon: priceIcon, dotIcon: dotIcon, mode: 'price' });
+
+    if (state.destCoords) {
+      L.polyline([state.destCoords, [garage.lat, garage.lng]], {
+        color: '#10B981', weight: 1.3, opacity: 0.28, dashArray: '4 8'
+      }).addTo(group);
+    }
+  });
+
+  if (recenter) {
+    const points = [];
+    if (state.destCoords) points.push(state.destCoords);
+    state.results.forEach(function (g) { points.push([g.lat, g.lng]); });
+    if (points.length === 1) map.setView(points[0], 14);
+    else if (points.length > 1) map.fitBounds(points, { padding: [46, 46], maxZoom: 14 });
+  }
+
+  if (!state.declutterWired) {
+    state.declutterWired = true;
+    map.on('zoomend moveend', declutterPriceMarkers);
+  }
+
+  setTimeout(function () {
+    map.invalidateSize();
+    declutterPriceMarkers();
+  }, 160);
+  requestAnimationFrame(declutterPriceMarkers);
+}
+
+/* Evita que las etiquetas de precio se pisen: las cocheras más cercanas al
+   destino conservan la etiqueta y el resto pasa a punto interactivo. */
+function declutterPriceMarkers() {
+  if (!state.map || !Array.isArray(state.priceMarkers) || state.priceMarkers.length === 0) return;
+  const map = state.map;
+  const ref = state.destCoords || [map.getCenter().lat, map.getCenter().lng];
+  const items = state.priceMarkers.map(function (item, index) {
+    const point = map.latLngToContainerPoint([item.garage.lat, item.garage.lng]);
+    return {
+      item: item,
+      x: point.x,
+      y: point.y,
+      score: haversineKm(ref[0], ref[1], item.garage.lat, item.garage.lng),
+      order: index
+    };
+  }).sort(function (a, b) {
+    return a.score - b.score || a.order - b.order;
+  });
+
+  const placed = [];
+  if (state.destCoords) {
+    const destPoint = map.latLngToContainerPoint(state.destCoords);
+    placed.push({ left: destPoint.x - 35, top: destPoint.y - 12, w: 70, h: 24 });
+  }
+
+  const W = 74;
+  const H = 30;
+  const PAD = 6;
+
+  items.forEach(function (entry) {
+    const left = entry.x - W / 2;
+    const top = entry.y - H;
+    let collides = false;
+
+    for (let i = 0; i < placed.length; i++) {
+      const box = placed[i];
+      const separated =
+        left + W + PAD <= box.left ||
+        box.left + box.w + PAD <= left ||
+        top + H + PAD <= box.top ||
+        box.top + box.h + PAD <= top;
+      if (!separated) { collides = true; break; }
+    }
+
+    if (collides) {
+      if (entry.item.mode !== 'dot') {
+        entry.item.marker.setIcon(entry.item.dotIcon);
+        entry.item.mode = 'dot';
+      }
+      entry.item.marker.setZIndexOffset(0);
+    } else {
+      if (entry.item.mode !== 'price') {
+        entry.item.marker.setIcon(entry.item.priceIcon);
+        entry.item.mode = 'price';
+      }
+      entry.item.marker.setZIndexOffset(500);
+      placed.push({ left: left, top: top, w: W, h: H });
+    }
+  });
+}
+
+/* ------------------------- reserva ------------------------- */
+
+function selectGarage(garage) {
+  if (availabilityOf(garage) <= 0) {
+    toast(t('toast.noSpotsShort', { garage: garage.name }), 'warn');
+    return;
+  }
+  state.currentGarage = garage;
+  openReserveModal(garage);
+}
+
+function openReserveModal(garage) {
+  const avail = availabilityOf(garage);
+  const cost = costOf(garage);
+  const arrival = state.arrival.slice(0, 5);
+  const end = timeAdd(state.arrival, state.hours);
+
+  const container = q('#reserveModal');
+  container.innerHTML =
+    '<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="reserveTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="reserveTitle">' + escapeHtml(t('reserve.title')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(garage.name) + ' · ' + escapeHtml(garage.address) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="reserveModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+
+      '<div class="summary-grid">' +
+        '<div><span>' + escapeHtml(t('reserve.date')) + '</span><strong>' + escapeHtml(state.date) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('reserve.time')) + '</span><strong>' + arrival + ' → ' + end + ' ' + t('common.hourShort') + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('reserve.duration')) + '</span><strong>' + state.hours + ' ' + t('common.hourShort') + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('reserve.spotsNow')) + '</span><strong id="reserveAvail">' + avail + ' / ' + garage.totalSpaces + '</strong></div>' +
+      '</div>' +
+
+      '<div class="pay-row">' +
+        '<span>' + escapeHtml(t('reserve.payPrefix')) + ' <strong>' + formatArs(cost) + '</strong> ' +
+          '<span class="muted">' + escapeHtml(t('reserve.payDetail', { rate: formatNumber(garage.ratePerHour), hours: state.hours })) + '</span></span>' +
+      '</div>' +
+
+      '<label class="plate-label" for="plateInput">' + escapeHtml(t('reserve.plateLabel')) + '</label>' +
+      '<div class="plate-row">' +
+        '<input id="plateInput" class="input" type="text" maxlength="10" value="' + generatePlate() + '" />' +
+        '<button id="regenPlate" class="btn btn-ghost" type="button">' + escapeHtml(t('reserve.regen')) + '</button>' +
+      '</div>' +
+
+      '<div class="modal-notes">' +
+        '<span class="badge badge-func">' + escapeHtml(t('reserve.antiDouble')) + '</span>' +
+        '<span class="muted">' + escapeHtml(t('reserve.antiDoubleNote')) + '</span>' +
+      '</div>' +
+
+      '<div class="modal-actions">' +
+        '<button class="btn btn-ghost" type="button" data-close="reserveModal">' + escapeHtml(t('common.cancel')) + '</button>' +
+        '<button id="reserveConfirmBtn" class="btn btn-primary" type="button" ' + (avail === 0 ? 'disabled' : '') + '>' +
+          escapeHtml(avail === 0 ? t('reserve.confirmNoSpots') : t('reserve.confirm')) +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+  openModal('reserveModal');
+  q('#reserveConfirmBtn').addEventListener('click', doReserve);
+  q('#regenPlate').addEventListener('click', function () {
+    q('#plateInput').value = generatePlate();
+  });
+  setTimeout(function () { const input = q('#plateInput'); if (input) input.focus(); }, 120);
+}
+
+function doReserve() {
+  const garage = state.currentGarage;
+  if (!garage) {
+    toast(t('toast.chooseGarage'), 'warn');
+    return;
+  }
+
+  /* Revalidación de inventario: evita doble reserva / cupo agotado
+     entre la apertura del modal y la confirmación. */
+  const avail = availabilityOf(garage);
+  if (avail <= 0) {
+    toast(t('toast.race'), 'err');
+    closeModal('reserveModal');
+    renderResults(false);
+    return;
+  }
+
+  const plateInput = q('#plateInput');
+  const plate = ((plateInput && plateInput.value) || '').trim().toUpperCase() || generatePlate();
+  const existing = getBookings();
+  const booking = {
+    id: generateBookingId(existing),
+    garageId: garage.id,
+    garage: garage.name,
+    address: garage.address,
+    plate: plate,
+    date: state.date,
+    arrival: state.arrival,
+    hours: state.hours,
+    cost: costOf(garage),
+    createdAt: new Date().toISOString(),
+    payment: 'simulado'
+  };
+
+  setInventory(garage.id, avail - 1);
+  existing.unshift(booking);
+  saveBookings(existing);
+  updateBookingsCount();
+
+  state.lastBooking = booking;
+  closeModal('reserveModal');
+  renderResults(false);
+  openSuccessModal(booking);
+  toast(t('toast.reserved'), 'ok');
+}
+
+function openSuccessModal(booking) {
+  const container = q('#successModal');
+  const end = timeAdd(booking.arrival, booking.hours);
+  state.lastBooking = booking;
+
+  container.innerHTML =
+    '<div class="modal-card wide success" role="dialog" aria-modal="true" aria-labelledby="successTitle">' +
+      '<div class="success-mark">✓</div>' +
+      '<h3 id="successTitle">' + escapeHtml(t('success.title')) + '</h3>' +
+      '<p class="modal-sub">' + escapeHtml(t('success.subtitle')) + '</p>' +
+
+      '<div class="booking-id">' +
+        '<span>' + escapeHtml(t('success.bookingId')) + '</span>' +
+        '<strong id="bookingIdText">' + escapeHtml(booking.id) + '</strong>' +
+        '<button class="btn btn-ghost" id="copyIdBtn" type="button">' + escapeHtml(t('common.copy')) + '</button>' +
+      '</div>' +
+
+      '<div class="success-grid">' +
+        '<div><span>' + escapeHtml(t('success.garage')) + '</span><strong>' + escapeHtml(booking.garage) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('success.address')) + '</span><strong>' + escapeHtml(booking.address) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('success.date')) + '</span><strong>' + escapeHtml(booking.date) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('success.time')) + '</span><strong>' + booking.arrival.slice(0, 5) + ' → ' + end + ' ' + t('common.hourShort') + ' · ' + booking.hours + ' ' + t('common.hourShort') + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('success.plate')) + '</span><strong>' + escapeHtml(booking.plate) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('success.total')) + '</span><strong>' + formatArs(booking.cost) + '</strong></div>' +
+      '</div>' +
+
+      '<div class="qr-box">' +
+        qrSvg(booking.id) +
+        '<div class="qr-caption">' + escapeHtml(t('success.qrCaption')) + '</div>' +
+        '<code>' + escapeHtml(booking.id) + '</code>' +
+      '</div>' +
+
+      '<div class="modal-actions">' +
+        '<button class="btn btn-ghost" type="button" data-close="successModal">' + escapeHtml(t('common.close')) + '</button>' +
+        '<button class="btn btn-primary" type="button" id="successDone">' + escapeHtml(t('common.done')) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  openModal('successModal');
+
+  q('#copyIdBtn').addEventListener('click', function () {
+    copyText(booking.id);
+  });
+  q('#successDone').addEventListener('click', function () {
+    closeModal('successModal');
+    state.currentGarage = null;
+  });
+}
+
+/* ------------------------- Mis reservas ------------------------- */
+
+function openBookingsModal() {
+  renderBookingsModal();
+  openModal('bookingsModal');
+}
+
+function renderBookingsModal() {
+  const container = q('#bookingsModal');
+  if (!container) return;
+  const list = getBookings();
+  state.bookings = list;
+  updateBookingsCount();
+
+  let body;
+  if (list.length === 0) {
+    body =
+      '<div class="booking-empty">' +
+        '<strong>' + escapeHtml(t('bookings.emptyTitle')) + '</strong>' +
+        '<p>' + escapeHtml(t('bookings.emptyText')) + '</p>' +
+      '</div>';
+  } else {
+    body = '<div class="bookings-list">' + list.map(function (b) {
+      const end = timeAdd(b.arrival, b.hours);
+      return '' +
+        '<div class="booking-row">' +
+          '<div class="booking-row-top">' +
+            '<div>' +
+              '<h4>' + escapeHtml(b.garage) + '</h4>' +
+              '<span class="bid">' + escapeHtml(b.id) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="booking-meta">' +
+            '<div><span>' + escapeHtml(t('bookings.dateTime')) + '</span><strong>' +
+              escapeHtml(b.date) + ' · ' + b.arrival.slice(0, 5) + ' → ' + end + ' ' + t('common.hourShort') +
+              '</strong></div>' +
+            '<div><span>' + escapeHtml(t('bookings.plate')) + '</span><strong>' + escapeHtml(b.plate) + '</strong></div>' +
+            '<div><span>' + escapeHtml(t('bookings.bookingId')) + '</span><strong>' + escapeHtml(b.id) + '</strong></div>' +
+            '<div><span>' + escapeHtml(t('bookings.total')) + '</span><strong>' + formatArs(b.cost) + '</strong></div>' +
+          '</div>' +
+          '<div class="booking-actions">' +
+            '<button class="btn btn-ghost btn-sm" type="button" data-view-qr="' + escapeHtml(b.id) + '">' +
+              escapeHtml(t('bookings.viewQr')) + '</button>' +
+            '<button class="btn btn-danger-ghost btn-sm" type="button" data-cancel-booking="' + escapeHtml(b.id) + '">' +
+              escapeHtml(t('bookings.cancel')) + '</button>' +
+          '</div>' +
+        '</div>';
+    }).join('') + '</div>';
+  }
+
+  container.innerHTML =
+    '<div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="bookingsTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="bookingsTitle">' + escapeHtml(t('bookings.title')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('bookings.subtitle')) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="bookingsModal" aria-label="' +
+          escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+      body +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-ghost" type="button" data-close="bookingsModal">' +
+          escapeHtml(t('common.close')) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  Array.prototype.forEach.call(container.querySelectorAll('[data-view-qr]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const id = btn.getAttribute('data-view-qr');
+      const booking = getBookings().find(function (b) { return b.id === id; });
+      if (booking) openBookingQr(booking);
+    });
+  });
+
+  Array.prototype.forEach.call(container.querySelectorAll('[data-cancel-booking]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const id = btn.getAttribute('data-cancel-booking');
+      const booking = cancelBooking(id);
+      if (booking) toast(t('bookings.canceled', { id: booking.id, garage: booking.garage }), 'ok');
+      renderBookingsModal();
+    });
+  });
+}
+
+function cancelBooking(id) {
+  const list = getBookings();
+  const index = list.findIndex(function (b) { return b.id === id; });
+  if (index < 0) return null;
+  const booking = list[index];
+  list.splice(index, 1);
+  saveBookings(list);
+
+  const garage = GARAGES.find(function (g) { return g.id === booking.garageId; }) ||
+    GARAGES.find(function (g) { return g.name === booking.garage; });
+  if (garage) {
+    setInventory(garage.id, Math.min(availabilityOf(garage) + 1, garage.totalSpaces));
+  }
+  if (state.lastBooking && state.lastBooking.id === id) state.lastBooking = null;
+  if (state.qrBooking && state.qrBooking.id === id) state.qrBooking = null;
+  updateBookingsCount();
+  renderResults(false);
+  return booking;
+}
+
+function openBookingQr(booking) {
+  const container = q('#qrModal');
+  if (!container) return;
+  state.qrBooking = booking;
+  const end = timeAdd(booking.arrival, booking.hours);
+
+  container.innerHTML =
+    '<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bookingQrTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="bookingQrTitle">' + escapeHtml(t('bookings.qrTitle')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('bookings.qrSubtitle')) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="qrModal" aria-label="' +
+          escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+      '<div class="qr-detail">' +
+        qrSvg(booking.id) +
+        '<div class="qr-caption">' + escapeHtml(t('success.qrCaption')) + '</div>' +
+        '<code>' + escapeHtml(booking.id) + '</code>' +
+      '</div>' +
+      '<div class="summary-grid">' +
+        '<div><span>' + escapeHtml(t('bookings.garage')) + '</span><strong>' + escapeHtml(booking.garage) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('bookings.dateTime')) + '</span><strong>' +
+          escapeHtml(booking.date) + ' · ' + booking.arrival.slice(0, 5) + ' → ' + end + ' ' + t('common.hourShort') +
+          '</strong></div>' +
+        '<div><span>' + escapeHtml(t('bookings.plate')) + '</span><strong>' + escapeHtml(booking.plate) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('bookings.total')) + '</span><strong>' + formatArs(booking.cost) + '</strong></div>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-ghost" type="button" data-close="qrModal">' + escapeHtml(t('common.close')) + '</button>' +
+        '<button class="btn btn-primary" type="button" id="qrBackBtn">' + escapeHtml(t('bookings.back')) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  openModal('qrModal');
+  const back = q('#qrBackBtn');
+  if (back) back.addEventListener('click', function () {
+    closeModal('qrModal');
+    openBookingsModal();
+  });
+}
+
+/* ------------------------- helpers de reserva / QR ------------------------- */
+
+function generatePlate() {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  function pick(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += letters[Math.floor(Math.random() * letters.length)];
+    return out;
+  }
+  return pick(2) + ' ' + String(Math.floor(100 + Math.random() * 900)) + ' ' + pick(2);
+}
+
+function generateBookingId(existing) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const taken = {};
+  (existing || getBookings()).forEach(function (b) { taken[b.id] = true; });
+  let id = '';
+  do {
+    id = 'PF-2026-';
+    for (let i = 0; i < 4; i++) id += chars[Math.floor(Math.random() * chars.length)];
+  } while (taken[id]);
+  return id;
+}
+
+function hashString(str) {
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) || 1;
+}
+
+/* QR visual determinístico derivado del Booking ID. Se dibuja como SVG local:
+   no hay servicios externos ni generación por imagen. */
+function qrSvg(id) {
+  const N = 21;
+  const cell = 6;
+  const pad = 9;
+  const size = N * cell + pad * 2;
+  let h = hashString(String(id));
+  let modules = '';
+
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
+      if (((h >>> 15) & 1) === 1) {
+        modules += '<rect x="' + (pad + x * cell) + '" y="' + (pad + y * cell) +
+          '" width="' + cell + '" height="' + cell + '" rx="1.1"/>';
+      }
+    }
+  }
+
+  function finder(fx, fy) {
+    const X = pad + fx * cell;
+    const Y = pad + fy * cell;
+    return '<g transform="translate(' + X + ',' + Y + ')">' +
+      '<rect width="' + (7 * cell) + '" height="' + (7 * cell) + '" fill="#0F172A" rx="2"/>' +
+      '<rect x="' + cell + '" y="' + cell + '" width="' + (5 * cell) + '" height="' + (5 * cell) + '" fill="#FFFFFF"/>' +
+      '<rect x="' + (2 * cell) + '" y="' + (2 * cell) + '" width="' + (3 * cell) + '" height="' + (3 * cell) + '" fill="#0F172A" rx="1.5"/>' +
+    '</g>';
+  }
+
+  return '<svg class="qr-svg" width="168" height="168" viewBox="0 0 ' + size + ' ' + size +
+    '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' +
+    escapeHtml(t('success.qrAria', { id: id })) + '">' +
+    '<rect width="' + size + '" height="' + size + '" rx="10" fill="#FFFFFF"/>' +
+    '<g fill="#0F172A">' + modules + '</g>' +
+    finder(0, 0) + finder(N - 7, 0) + finder(0, N - 7) +
+    '<rect x="0.5" y="0.5" width="' + (size - 1) + '" height="' + (size - 1) + '" rx="10" fill="none" stroke="#E2E8F0"/>' +
+  '</svg>';
+}
+
+function copyText(text) {
+  function fallback() {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    area.remove();
+    toast(ok ? t('toast.copiedFallback') : t('toast.copyManual', { id: text }), ok ? 'ok' : 'warn');
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+      .then(function () { toast(t('toast.copied'), 'ok'); })
+      .catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+/* ------------------------- modales ------------------------- */
+
+function openStatusModal() {
+  renderStatusModal();
+  openModal('statusModal');
+}
+
+function renderStatusModal() {
+  const container = q('#statusModal');
+  if (!container) return;
+
+  function list(items) {
+    return '<ul>' + items.map(function (key) {
+      return '<li>' + escapeHtml(t(key)) + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  container.innerHTML =
+    '<div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="statusTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="statusTitle">' + escapeHtml(t('status.title')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('status.subtitle')) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="statusModal" aria-label="' +
+          escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+
+      '<div class="status-block">' +
+        '<h4><span class="badge badge-func">' + escapeHtml(t('badges.functional')) + '</span> ' +
+          escapeHtml(t('status.functionalTitle')) + '</h4>' +
+        list(['status.f1', 'status.f2', 'status.f3', 'status.f4', 'status.f5']) +
+      '</div>' +
+
+      '<div class="status-block">' +
+        '<h4><span class="badge badge-func">' + escapeHtml(t('badges.simulated')) + '</span> ' +
+          escapeHtml(t('status.simulatedTitle')) + '</h4>' +
+        list(['status.s1', 'status.s2']) +
+      '</div>' +
+
+      '<div class="status-block">' +
+        '<h4><span class="badge badge-conceptual">' + escapeHtml(t('badges.conceptual')) + '</span> ' +
+          escapeHtml(t('status.conceptualTitle')) + '</h4>' +
+        list(['status.c1', 'status.c2']) +
+      '</div>' +
+
+      '<div class="status-note">' + escapeHtml(t('status.note')) + ' ' +
+        escapeHtml(t('status.testHint')) + '</div>' +
+
+      '<div class="demo-block">' +
+        '<h4>⚡ ' + escapeHtml(t('status.demoTitle')) + '</h4>' +
+        '<ol>' + ['status.demo1', 'status.demo2', 'status.demo3', 'status.demo4', 'status.demo5', 'status.demo6']
+          .map(function (key) { return '<li>' + escapeHtml(t(key)) + '</li>'; }).join('') + '</ol>' +
+      '</div>' +
+
+      '<div class="modal-actions">' +
+        '<button class="btn btn-ghost" id="statusTestBtn" type="button">' +
+          escapeHtml(t('status.testBtn')) + '</button>' +
+        '<button class="btn btn-primary" type="button" data-close="statusModal">' +
+          escapeHtml(t('status.understood')) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  const testBtn = q('#statusTestBtn', container);
+  if (testBtn) {
+    testBtn.addEventListener('click', function () {
+      closeModal('statusModal');
+      simulateExternalUser();
+    });
+  }
+}
+
+function openModal(id) {
+  const modal = q('#' + id);
+  if (!modal) return;
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+}
+
+function closeModal(id) {
+  const modal = q('#' + id);
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+  if (!q('.modal.show')) document.body.classList.remove('modal-open');
+}
+
+/* ------------------------- acciones demo ------------------------- */
+
+function simulateExternalUser() {
+  const withAvailability = GARAGES.filter(function (g) { return availabilityOf(g) > 0; });
+  if (withAvailability.length === 0) {
+    toast(t('toast.simulateNone'), 'err');
+    return;
+  }
+
+  withAvailability.sort(function (a, b) { return availabilityOf(a) - availabilityOf(b); });
+  const garage = withAvailability[0];
+  const before = availabilityOf(garage);
+
+  setInventory(garage.id, 0);
+  if (state.currentGarage && state.currentGarage.id === garage.id) {
+    closeModal('reserveModal');
+  }
+  renderResults(false);
+
+  toast(t('toast.simulateDone', { garage: garage.name, n: before }), 'warn');
+
+  setTimeout(function () {
+    const card = document.querySelector('.card[data-garage="' + garage.id + '"]');
+    if (!card) return;
+    card.classList.add('flash');
+    setTimeout(function () { card.classList.remove('flash'); }, 1600);
+  }, 40);
+}
+
+function resetDemo() {
+  state.inv = Object.assign({}, INITIAL_INVENTORY);
+  persistInventory();
+  saveBookings([]);
+  state.currentGarage = null;
+  state.lastBooking = null;
+  state.qrBooking = null;
+  closeModal('reserveModal');
+  closeModal('successModal');
+  closeModal('qrModal');
+  updateBookingsCount();
+  if (q('#bookingsModal').classList.contains('show')) renderBookingsModal();
+  renderResults(true);
+  toast(t('toast.reset'), 'ok');
+}
+
+/* ------------------------- búsqueda principal ------------------------- */
+
+async function onSearch(event) {
+  if (event && event.preventDefault) event.preventDefault();
+  readForm();
+  const zoneId = q('#zoneSel').value;
+  state.zoneId = zoneId;
+  let dest = null;
+
+  if (zoneId === 'custom') {
+    const address = q('#customAddr').value.trim();
+    if (address) {
+      q('#destLine').textContent = t('search.searching', { address: address });
+      const coords = await geocodeAddress(address);
+      if (coords) {
+        dest = coords;
+        state.destLabel = address;
+      }
+    }
+    if (!dest) {
+      dest = state.destCoords || ZONE_MAP['obeliso'].coords;
+      state.destLabel = state.destLabel || t('destLine.zone');
+      toast(t('toast.geocodeFallback'), 'warn');
+    }
+  } else {
+    const zone = ZONE_MAP[zoneId] || ZONE_MAP['obeliso'];
+    dest = zone.coords;
+    state.destLabel = t('zone.' + (ZONE_MAP[zoneId] ? zoneId : 'obeliso'));
+  }
+
+  state.destCoords = dest;
+  renderResults(true);
+}
+
+function applyOfflineUi(isOffline) {
+  const banner = q('#offlineBanner');
+  const mapDown = q('#mapDown');
+  if (banner) banner.hidden = !isOffline;
+  if (mapDown) mapDown.hidden = !isOffline;
+}
+
+function onOfflineToggle(event) {
+  state.offline = !!event.target.checked;
+  lsSet(LS.offline, state.offline ? '1' : '0');
+  applyOfflineUi(state.offline);
+  toast(
+    state.offline ? t('toast.offlineOn') : t('toast.offlineOff'),
+    state.offline ? 'warn' : 'ok'
+  );
+  renderResults(false);
+}
+
+function onMapClick(event) {
+  const btn = event.target.closest('.mp-reserve');
+  if (!btn) return;
+  const garage = GARAGES.find(function (g) { return g.id === btn.getAttribute('data-garage'); });
+  if (garage) selectGarage(garage);
+}
+
+/* ------------------------- bootstrap ------------------------- */
+
+function init() {
+  state.lang = lsGet(LS.lang) === 'en' ? 'en' : 'es';
+  applyStaticTranslations();
+
+  state.inv = getInventory();
+  state.date = todayStr();
+
+  const dateInput = q('#dateInput');
+  dateInput.value = state.date;
+  dateInput.min = state.date;
+
+  state.offline = false;
+  lsSet(LS.offline, '0');
+  q('#offlineSwitch').checked = false;
+  applyOfflineUi(false);
+
+  q('#zoneSel').value = 'obeliso';
+  state.zoneId = 'obeliso';
+  state.destCoords = ZONE_MAP['obeliso'].coords;
+  state.destLabel = t('zone.obeliso');
+  updateBookingsCount();
+
+  Array.prototype.forEach.call(document.querySelectorAll('.lang-btn'), function (btn) {
+    btn.addEventListener('click', function () { setLanguage(btn.dataset.lang); });
+  });
+
+  q('#searchForm').addEventListener('submit', onSearch);
+  q('#sortSel').addEventListener('change', function () { renderResults(false); });
+  q('#onlyAvailable').addEventListener('change', function () { renderResults(false); });
+  q('#hoursInput').addEventListener('change', function () { renderResults(false); });
+  q('#dateInput').addEventListener('change', function () { renderResults(false); });
+  q('#arrivalInput').addEventListener('change', function () { renderResults(false); });
+  q('#zoneSel').addEventListener('change', function () {
+    if (q('#zoneSel').value === 'custom') q('#customAddr').focus();
+  });
+  q('#offlineSwitch').addEventListener('change', onOfflineToggle);
+  q('#offlineBannerBtn').addEventListener('click', function () {
+    const checkbox = q('#offlineSwitch');
+    checkbox.checked = false;
+    onOfflineToggle({ target: checkbox });
+  });
+  q('#statusBtn').addEventListener('click', function () {
+    renderStatusModal();
+    openModal('statusModal');
+  });
+  q('#bookingsBtn').addEventListener('click', openBookingsModal);
+  q('#resetDemoBtn').addEventListener('click', resetDemo);
+  q('#map').addEventListener('click', onMapClick);
+
+  /* Cierre de modales por botón, backdrop y tecla Escape */
+  document.addEventListener('click', function (event) {
+    const closer = event.target.closest('[data-close]');
+    if (closer) {
+      closeModal(closer.getAttribute('data-close'));
+      return;
+    }
+    if (
+      event.target.classList &&
+      event.target.classList.contains('modal') &&
+      event.target.classList.contains('show')
+    ) {
+      closeModal(event.target.id);
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    Array.prototype.forEach.call(document.querySelectorAll('.modal.show'), function (modal) {
+      closeModal(modal.id);
+    });
+  });
+
+  /* Primera búsqueda */
+  onSearch();
+  setTimeout(function () {
+    if (state.map) state.map.invalidateSize();
+  }, 450);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+
+
+</script>
+
+
+</body>
+</html>
