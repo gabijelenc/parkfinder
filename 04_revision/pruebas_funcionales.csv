@@ -1,0 +1,11 @@
+id,requirement,scenario,expected,status,evidence
+T01,PF-01,Capacity 1; 08-11 then 11-13,Both accepted,NOT_RUN,
+T02,PF-02,Capacity 1; 08-11 then 10-12,Second rejected,NOT_RUN,
+T03,PF-01,Capacity 2; 08-09 and 10-11; request 08-11,One additional booking possible,NOT_RUN,
+T04,PF-01,Cancel overlapping reservation,Capacity released,NOT_RUN,
+T05,PF-03,Unsupported vehicle,Booking rejected,NOT_RUN,
+T06,PF-04,Compare car and SUV,Quote differs,NOT_RUN,
+T07,PF-04,Change rates after confirmation,Stored quote unchanged,NOT_RUN,
+T08,PF-13,Reload page,Bookings persist,NOT_RUN,
+T09,PF-13,Map failure,Fallback available with explicit limits,NOT_RUN,
+T10,PF-02,Repeat submit,No duplicate local booking,NOT_RUN,
