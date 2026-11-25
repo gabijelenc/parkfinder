@@ -1,0 +1,5 @@
+# PF-14 — Map integration · draft
+V0: retain existing Leaflet map; audit existing navigation links. Provide Google Maps external directions using https://www.google.com/maps/dir/?api=1&destination=LAT%2CLNG&travelmode=driving only for verified coordinates; label synthetic garages. No key needed for external links.
+V1/V2: define provider interface for map rendering, geocoding/autocomplete and routing; test Google Maps Demo Key eligibility and supported features, keep OSM adapter and list fallback. Preserve ES/EN and existing booking flow. Do not scrape Google, mix restricted content or commit server secrets.
+V3: evaluate real Places ratings, opening hours and Routes; isolate licensed data from ParkFinder inventory. Billing-backed services require explicit approval, key restrictions, quotas, monitoring and terms review.
+Acceptance: (1) map loads without paid credentials in fallback mode; (2) external directions opens correct coordinates; (3) no map failure prevents access to existing local bookings; (4) synthetic ratings never attributed to Google; (5) no route estimate falsely labeled as actual; (6) no booking possible for external-only listing. Tests not run.
