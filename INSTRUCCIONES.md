@@ -1,0 +1,2 @@
+# ParkFinder — instrucciones
+Leer README, ESTADO y 01_fuentes antes de trabajar. Conservar fuentes originales; separar hechos, hipótesis, propuestas y resultados comprobados. No inventar evidencia ni aceptación. Usar datos sintéticos. Mantener UI bilingüe y documentación final en inglés. Antigravity implementa código; ChatGPT prepara requisitos y revisa. No activar servicios pagos, fusionar main ni desplegar sin aprobación del equipo.
