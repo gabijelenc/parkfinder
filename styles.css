@@ -3713,7 +3713,8 @@ main {
     align-items: center;
     gap: 6px;
     position: fixed;
-    bottom: 74px;
+    top: calc(50vh - 22px);
+    bottom: auto;
     right: 14px;
     left: auto;
     transform: none;

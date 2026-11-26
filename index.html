@@ -4059,7 +4059,10 @@ function openSuccessModal(booking) {
         '<div><span>' + escapeHtml(t('success.vehicle')) + '</span><strong>' + escapeHtml(t('vehicle.' + booking.vehicleType)) + '</strong></div>' +
         '<div><span>' + escapeHtml(t('success.plate')) + '</span><strong>' + escapeHtml(booking.plate) + '</strong></div>' +
         '<div><span>' + escapeHtml(t('success.total')) + '</span><strong id="successLockedTotal">' + formatArs(booking.cost) + '</strong></div>' +
-        '<div><span>' + escapeHtml(t('success.payment')) + '</span><strong>' + escapeHtml(t('success.paymentSim')) + '</strong></div>' +
+        '<div><span>' + escapeHtml(t('success.payment')) + '</span><strong>' + escapeHtml(
+          booking.paymentMethod === 'pay_at_garage' && window.ParkFinderSprint2C
+            ? window.ParkFinderSprint2C.ts('checkout.payGarageTitle')
+            : t('success.paymentSim')) + '</strong></div>' +
       '</div>' +
 
       (booking.quote ? '<div class="booking-quote-summary">' + escapeHtml(t('success.quoteLockedNote', { base: lockedBase })) + '</div>' : '') +
