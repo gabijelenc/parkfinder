@@ -4,3 +4,9 @@ D02,V1,Fixed price and no vehicle differentiation,Add transparent configurable p
 D03,V1,Local storage only,Document concurrency limitation and evaluate shared store,Avoid false guarantees,PENDING_REVIEW,NOT_IMPLEMENTED
 D04,V1,External payments and ratings not integrated,Keep demo data and evaluate test services,Cost and dependency control,PENDING_REVIEW,NOT_IMPLEMENTED
 D05,V0,Map provider selection,Google Maps target with OSM fallback,Geographic context and continuity,USER_ENDORSED_TEAM_REVIEW_PENDING,DESIGN_DOCUMENTED
+D06,S2C,Temporary checkout hold duration needed to avoid last-spot race during checkout,10-minute configurable hold TTL in system_settings with lazy expiration inside RPCs (no paid cron),Prevent overbooking on Supabase Free Tier without paid schedulers,PENDING_TEAM_APPROVAL,IMPLEMENTED_LOCAL_VERIFIED
+D07,S2C,Multi-user concurrent booking on last available space,Facility advisory+row lock (FOR UPDATE) + concrete parking_spaces assignment + PostgreSQL btree_gist exclusion constraint,Mathematically eliminate double-booking across concurrent sessions,PENDING_TEAM_APPROVAL,IMPLEMENTED_10_SESSION_CONCURRENCY_PASS
+D08,S2C,Dynamic pricing authority must live in backend with zero drift vs client,Replicate R04 hourly-segment proration and single final rounding in PostgreSQL pf_calculate_quote_internal,Prevent client price tampering and ensure consistent quotes,PENDING_TEAM_APPROVAL,IMPLEMENTED_12_12_JS_PG_PARITY_PASS
+D09,S2C,Cancellation policy R06 in backend RPC,0% fee >=2h before starts_at and 20% <2h (demo calculation only; no real charge),Align with reglas_negocio_v01.md R06 pending commercial/legal approval,PENDING_TEAM_APPROVAL,IMPLEMENTED_DEMO_ONLY
+D10,S2C,Vehicle deletion vs historical booking integrity,Allow deleting unused vehicles and retain vehicles referenced by bookings via FK while preserving vehicle_snapshot,Guarantee referential integrity and historical auditability,PENDING_TEAM_APPROVAL,IMPLEMENTED_LOCAL_VERIFIED
+

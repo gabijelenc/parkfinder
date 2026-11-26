@@ -22,7 +22,10 @@
 })();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="core-booking.js"></script>
+<script src="supabase-client.js"></script>
+<script src="sprint2c-app.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -106,6 +109,17 @@
   <button id="offlineBannerBtn" class="banner-action" type="button" data-i18n="banner.action">Volver a conectar</button>
 </div>
 
+<div id="backendSyncBanner" class="banner banner-sandbox" role="status" hidden>
+  <div class="banner-icon" aria-hidden="true">DB</div>
+  <div class="banner-body">
+    <strong id="backendSyncTitle">Backend Supabase</strong>
+    <span id="backendSyncText">—</span>
+  </div>
+  <div class="banner-actions">
+    <button id="backendRetryBtn" class="banner-action" type="button">Reintentar</button>
+  </div>
+</div>
+
 <main id="top">
   <!-- Compact Integrated Progressive Search Band -->
   <section class="search-section" aria-label="Buscador de estacionamientos" data-i18n-aria="search.aria">
@@ -115,7 +129,10 @@
           <span class="search-heading-title" data-i18n="search.title">¿A dónde vas?</span>
           <span class="muted" data-i18n="search.caption">Buenos Aires (UTC-3) · Disponibilidad y tarifas demo</span>
         </h1>
-        <div class="dest-line" id="destLine"></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="backendModePill" class="mode-pill is-offline" aria-live="polite"><i class="mode-pill-dot" aria-hidden="true"></i><span>Demo Offline · Solo local</span></span>
+          <div class="dest-line" id="destLine"></div>
+        </div>
       </div>
 
       <!-- Mobile floating top "¿A dónde vas?" progressive search trigger -->
@@ -413,6 +430,8 @@
 <div class="modal" id="favoritesModal" aria-hidden="true"></div>
 <div class="modal" id="profileModal" aria-hidden="true"></div>
 <div class="modal" id="advancedFiltersModal" aria-hidden="true"></div>
+<div class="modal" id="authModal" aria-hidden="true"></div>
+<div class="modal" id="extendModal" aria-hidden="true"></div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -607,7 +626,30 @@ const state = {
   lastBooking: null,
   qrBooking: null,
   lastQaRun: null,
-  storageImplOverride: null
+  storageImplOverride: null,
+  backendMode: 'offline_demo',
+  backendNetError: null,
+  session: null,
+  user: null,
+  profile: null,
+  roles: [],
+  vehicles: [],
+  selectedVehicleId: null,
+  notificationPreferences: {},
+  notifications: [],
+  analytics: null,
+  serverGarages: null,
+  serverQaGarages: null,
+  serverBookings: [],
+  bookingsTab: 'all',
+  profileTab: 'account',
+  authTab: 'login',
+  activeHold: null,
+  holdCountdownTimer: null,
+  checkoutPaymentMethod: 'pay_at_garage',
+  checkoutIdempotencyKey: null,
+  pendingReserveGarageId: null,
+  pendingReserveGarageName: null
 };
 
 const MapProviderRegistry = {
@@ -1635,21 +1677,32 @@ function activeStorageAdapter() {
 }
 
 function getActiveGarages() {
+  if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode()) {
+    if (state.sandboxMode && Array.isArray(state.serverQaGarages) && state.serverQaGarages.length > 0) {
+      return state.serverQaGarages;
+    }
+    if (!state.sandboxMode && Array.isArray(state.serverGarages) && state.serverGarages.length > 0) {
+      return state.serverGarages;
+    }
+  }
   return state.sandboxMode ? SANDBOX_GARAGES : GARAGES;
 }
 
 function findGarageById(id) {
-  return getActiveGarages().find(function (g) { return g.id === id; }) ||
+  return getActiveGarages().find(function (g) { return g.id === id || g.slug === id || g.uuid === id; }) ||
     GARAGES.find(function (g) { return g.id === id; }) || null;
 }
 
 function getBookings() {
+  if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode() && !state.sandboxMode) {
+    return Array.isArray(state.serverBookings) ? state.serverBookings : [];
+  }
   const res = activeStorageAdapter().read();
   return res.ok ? res.data : [];
 }
 
 function getActiveConfirmedBookings(list) {
-  return (list || getBookings()).filter(function (b) { return b.status === 'confirmed'; });
+  return (list || getBookings()).filter(function (b) { return b.status === 'confirmed' || b.status === 'checked_in'; });
 }
 
 function updateBookingsCount() {
@@ -1703,6 +1756,9 @@ function applyTheme(theme, silent) {
   }
   if (!silent) {
     toast(isDark ? t('theme.changedDark') : t('theme.changedLight'), 'ok');
+    if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode() && state.user && window.ParkFinderSupabase) {
+      window.ParkFinderSupabase.updateProfile(state.user.id, { preferred_theme: state.theme });
+    }
   }
 }
 
@@ -1732,9 +1788,10 @@ function applyStaticTranslations() {
   document.title = t('meta.title');
   applyTheme(state.theme, true);
   updateMobileViewButton();
+  if (window.ParkFinderSprint2C) window.ParkFinderSprint2C.updateBackendModeUi();
 }
 
-function setLanguage(code) {
+function setLanguage(code, silent) {
   if (code !== 'es' && code !== 'en') return;
   const reserveOpen = q('#reserveModal').classList.contains('show');
   const currentPlate = reserveOpen && q('#plateInput') ? q('#plateInput').value : '';
@@ -1751,6 +1808,7 @@ function setLanguage(code) {
   if (q('#compareModal').classList.contains('show')) renderCompareModal();
   if (q('#favoritesModal').classList.contains('show')) renderFavoritesModal();
   if (q('#profileModal').classList.contains('show')) renderProfileModal();
+  if (q('#authModal') && q('#authModal').classList.contains('show') && window.ParkFinderSprint2C) window.ParkFinderSprint2C.renderAuthModal();
   if (q('#advancedFiltersModal').classList.contains('show')) renderAdvancedFiltersModal();
   if (reserveOpen && state.currentGarage) {
     openReserveModal(state.currentGarage, true);
@@ -1760,7 +1818,12 @@ function setLanguage(code) {
   updateBookingsCount();
   if (q('#bookingsModal').classList.contains('show')) renderBookingsModal();
   if (q('#qrModal').classList.contains('show') && state.qrBooking) openBookingQr(state.qrBooking);
-  toast(t('toast.langChanged'), 'ok');
+  if (!silent) {
+    toast(t('toast.langChanged'), 'ok');
+    if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode() && state.user && window.ParkFinderSupabase) {
+      window.ParkFinderSupabase.updateProfile(state.user.id, { preferred_language: state.lang });
+    }
+  }
 }
 
 /* ------------------------- Favorites & Recent Destinations ------------------------- */
@@ -1787,14 +1850,19 @@ function isFavoriteGarage(garageId) {
 function toggleFavoriteGarage(garageId) {
   const garage = findGarageById(garageId);
   const idx = state.favoriteGarageIds.indexOf(garageId);
+  let adding = false;
   if (idx >= 0) {
     state.favoriteGarageIds.splice(idx, 1);
     if (garage) toast(t('favorites.removedGarage', { name: garage.name }), 'ok');
   } else {
+    adding = true;
     state.favoriteGarageIds.unshift(garageId);
     if (garage) toast(t('favorites.addedGarage', { name: garage.name }), 'ok');
   }
   lsJsonSet(LS.favGarages, state.favoriteGarageIds);
+  if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode() && state.user && garage && garage.uuid && window.ParkFinderSupabase) {
+    window.ParkFinderSupabase.syncFavoriteGarage(state.user.id, garage.uuid, adding);
+  }
   updateFavoritesCount();
   renderResults(false);
   if (state.detailGarageId === garageId) renderDetailPanel();
@@ -1822,10 +1890,13 @@ function toggleFavoriteDestination(destObj) {
   const idx = state.favoriteDestinations.findIndex(function (d) {
     return Core.normalizeSearchText(d.label) === norm;
   });
+  let adding = false;
+  let removedObj = null;
   if (idx >= 0) {
-    state.favoriteDestinations.splice(idx, 1);
+    removedObj = state.favoriteDestinations.splice(idx, 1)[0];
     toast(t('search.removeDestFav'), 'ok');
   } else {
+    adding = true;
     state.favoriteDestinations.unshift({
       id: target.id || 'fav-' + Date.now(),
       label: target.label,
@@ -1836,6 +1907,9 @@ function toggleFavoriteDestination(destObj) {
     toast(t('search.saveDestFav'), 'ok');
   }
   lsJsonSet(LS.favDestinations, state.favoriteDestinations);
+  if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode() && state.user && window.ParkFinderSupabase) {
+    window.ParkFinderSupabase.syncFavoriteDestination(state.user.id, adding ? target : (removedObj || target), adding);
+  }
   updateFavoritesCount();
   if (!q('#destDropdown').hidden) renderDestDropdown();
   if (q('#favoritesModal').classList.contains('show')) renderFavoritesModal();
@@ -2624,7 +2698,7 @@ function buildCard(garage, evalRes) {
   return card;
 }
 
-function renderResults(recenter) {
+function renderResults(recenter, fromServer) {
   readForm();
   updateDestLine();
   updateBookingsCount();
@@ -2650,9 +2724,20 @@ function renderResults(recenter) {
     return;
   }
 
+  const useServerEval = !!(window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode());
   garages.forEach(function (g) {
-    state.evaluations[g.id] = Core.evaluateGarageEligibility(g, state.interval, state.vehicleType, bookings);
+    state.evaluations[g.id] = (useServerEval && g.serverEvaluation)
+      ? g.serverEvaluation
+      : Core.evaluateGarageEligibility(g, state.interval, state.vehicleType, bookings);
   });
+
+  if (useServerEval && !fromServer) {
+    const intervalKey = state.interval.startAt + '|' + state.interval.endAt + '|' + state.vehicleType + '|' + (state.sandboxMode ? 'qa' : 'comm');
+    if (state._lastServerQueryKey !== intervalKey) {
+      state._lastServerQueryKey = intervalKey;
+      window.ParkFinderSprint2C.refreshCatalogFromServer();
+    }
+  }
 
   const filtered = Core.filterGarages(garages, state.evaluations, {
     onlyEligible: !state.showAll,
@@ -3612,6 +3697,10 @@ function openProfileModal() {
 }
 
 function renderProfileModal() {
+  if (window.ParkFinderSprint2C) {
+    window.ParkFinderSprint2C.renderProfileModal2C();
+    return;
+  }
   const container = q('#profileModal');
   if (!container) return;
 
@@ -3789,9 +3878,16 @@ function buildQuoteBreakdownHtml(quote, detailsId) {
 
 function selectGarage(garage) {
   readForm();
-  const ev = Core.evaluateGarageEligibility(garage, state.interval, state.vehicleType, getBookings());
+  const useServer = !!(window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode());
+  const ev = (useServer && garage.serverEvaluation)
+    ? garage.serverEvaluation
+    : Core.evaluateGarageEligibility(garage, state.interval, state.vehicleType, getBookings());
   if (!ev.eligible) {
     toast(t('toast.ineligibleGarage', { garage: garage.name, reason: reasonMessage(ev) }), 'warn');
+    return;
+  }
+  if (useServer && !state.user) {
+    window.ParkFinderSprint2C.openAuthModal('login', garage);
     return;
   }
   state.currentGarage = garage;
@@ -3799,6 +3895,10 @@ function selectGarage(garage) {
 }
 
 function openReserveModal(garage, preserveToken) {
+  if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode() && state.user) {
+    window.ParkFinderSprint2C.openServerReserveModal(garage);
+    return;
+  }
   readForm();
   const ev = Core.evaluateGarageEligibility(garage, state.interval, state.vehicleType, getBookings());
   const avail = ev.availability.availableSpaces;
@@ -3841,8 +3941,8 @@ function openReserveModal(garage, preserveToken) {
       '</div>' +
 
       '<div class="modal-notes">' +
-        '<span class="badge badge-simulado">' + escapeHtml(t('reserve.scopeBadge')) + '</span>' +
-        '<span>' + escapeHtml(t('reserve.scopeNote')) + '</span>' +
+        '<span class="badge badge-simulado">' + escapeHtml(window.ParkFinderSprint2C ? window.ParkFinderSprint2C.ts('checkout.offlineScopeBadge') : t('reserve.scopeBadge')) + '</span>' +
+        '<span>' + escapeHtml(window.ParkFinderSprint2C ? window.ParkFinderSprint2C.ts('checkout.offlineScopeNote') : t('reserve.scopeNote')) + '</span>' +
       '</div>' +
 
       '<div class="modal-actions">' +
@@ -3972,12 +4072,18 @@ function openSuccessModal(booking) {
 
       '<div class="modal-actions">' +
         (dirUrl ? '<a class="btn btn-secondary" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('card.directionsDemo')) + '</a>' : '') +
+        (window.ParkFinderSprint2C ? '<button class="btn btn-secondary" type="button" id="successIcsBtn">' + escapeHtml(window.ParkFinderSprint2C.ts('bookings2c.icsBtn')) + '</button>' : '') +
+        (window.ParkFinderSprint2C ? '<button class="btn btn-secondary" type="button" id="successShareBtn">' + escapeHtml(window.ParkFinderSprint2C.ts('bookings2c.shareBtn')) + '</button>' : '') +
         '<button class="btn btn-primary" type="button" id="successDone">' + escapeHtml(t('common.done')) + '</button>' +
       '</div>' +
     '</div>';
 
   openModal('successModal');
   q('#copyIdBtn').addEventListener('click', function () { copyText(booking.id); });
+  const icsBtn = q('#successIcsBtn');
+  if (icsBtn && window.ParkFinderSprint2C) icsBtn.addEventListener('click', function () { window.ParkFinderSprint2C.downloadBookingIcs(booking); });
+  const shareBtn = q('#successShareBtn');
+  if (shareBtn && window.ParkFinderSprint2C) shareBtn.addEventListener('click', function () { window.ParkFinderSprint2C.shareBooking(booking); });
   q('#successDone').addEventListener('click', function () {
     closeModal('successModal');
     state.currentGarage = null;
@@ -3985,11 +4091,22 @@ function openSuccessModal(booking) {
 }
 
 function openBookingsModal() {
+  if (window.ParkFinderSprint2C && window.ParkFinderSprint2C.isServerMode() && state.user) {
+    window.ParkFinderSprint2C.refreshServerBookings().then(function () {
+      renderBookingsModal();
+      openModal('bookingsModal');
+    });
+    return;
+  }
   renderBookingsModal();
   openModal('bookingsModal');
 }
 
 function renderBookingsModal() {
+  if (window.ParkFinderSprint2C) {
+    window.ParkFinderSprint2C.renderBookingsModal2C();
+    return;
+  }
   const container = q('#bookingsModal');
   if (!container) return;
   const list = getBookings();
@@ -4283,6 +4400,9 @@ function openModal(id) {
 function closeModal(id) {
   const modal = q('#' + id);
   if (!modal) return;
+  if (id === 'reserveModal' && window.ParkFinderSprint2C) {
+    window.ParkFinderSprint2C.stopHoldCountdown();
+  }
   modal.classList.remove('show');
   modal.setAttribute('aria-hidden', 'true');
   if (!q('.modal.show') && !state.detailGarageId) document.body.classList.remove('modal-open');
@@ -4509,6 +4629,12 @@ function setOfflineMode(isOffline) {
   lsPrefSet(LS.offline, state.offline ? '1' : '0');
   applyOfflineUi(state.offline);
   toast(state.offline ? t('toast.offlineOn') : t('toast.offlineOff'), state.offline ? 'warn' : 'ok');
+  if (window.ParkFinderSprint2C) {
+    window.ParkFinderSprint2C.updateBackendModeUi();
+    if (!state.offline) {
+      window.ParkFinderSprint2C.initBackend();
+    }
+  }
   renderResults(false);
 }
 
@@ -4646,6 +4772,12 @@ function init() {
   q('#detailBackdrop').addEventListener('click', closeDetailPanel);
 
   q('#offlineBannerBtn').addEventListener('click', function () { setOfflineMode(false); });
+  const retryBtn = q('#backendRetryBtn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', function () {
+      if (window.ParkFinderSprint2C) window.ParkFinderSprint2C.initBackend();
+    });
+  }
   q('#sandboxResetBtn').addEventListener('click', resetSandbox);
   q('#sandboxExitBtn').addEventListener('click', exitSandbox);
 
@@ -4689,13 +4821,49 @@ function init() {
     if (state.detailGarageId) closeDetailPanel();
   });
 
+  if (window.ParkFinderSprint2C) {
+    window.ParkFinderSprint2C.attach({
+      state: state,
+      q: q,
+      t: t,
+      escapeHtml: escapeHtml,
+      formatArs: formatArs,
+      formatDuration: formatDuration,
+      formatIntervalLabel: formatIntervalLabel,
+      toast: toast,
+      copyText: copyText,
+      openModal: openModal,
+      closeModal: closeModal,
+      readForm: readForm,
+      findGarageById: findGarageById,
+      getBookings: getBookings,
+      activeStorageAdapter: activeStorageAdapter,
+      updateBookingsCount: updateBookingsCount,
+      updateFavoritesCount: updateFavoritesCount,
+      renderResults: renderResults,
+      applyTheme: applyTheme,
+      toggleTheme: toggleTheme,
+      setLanguage: setLanguage,
+      selectGarage: selectGarage,
+      openSuccessModal: openSuccessModal,
+      openBookingQr: openBookingQr,
+      buildQuoteBreakdownHtml: buildQuoteBreakdownHtml,
+      reasonMessage: reasonMessage,
+      generatePlate: generatePlate,
+      cancelBookingLocal: cancelBooking
+    });
+  }
+
   onSearch(null, true);
+  if (window.ParkFinderSprint2C) {
+    window.ParkFinderSprint2C.initBackend();
+  }
   setTimeout(function () {
     if (state.map) state.map.invalidateSize();
   }, 400);
 }
 
-/* Controlled test & QA API (Preserves Sprint 01 + Sprint 02A hooks + Sprint 2B hooks) */
+/* Controlled test & QA API (Preserves Sprint 01 + Sprint 02A + Sprint 2B + Sprint 2C hooks) */
 window.ParkFinderApp = {
   state: state,
   GARAGES: GARAGES,
@@ -4726,6 +4894,17 @@ window.ParkFinderApp = {
   setOfflineMode: setOfflineMode,
   setStorageBackend: function (impl) { state.storageImplOverride = impl; },
   restoreStorageBackend: function () { state.storageImplOverride = null; },
+  openAuthModal: function (tab) { if (window.ParkFinderSprint2C) window.ParkFinderSprint2C.openAuthModal(tab); },
+  openProfileModal: openProfileModal,
+  openBookingsModal: openBookingsModal,
+  getBackendMode: function () { return state.backendMode; },
+  refreshFromBackend: function () { return window.ParkFinderSprint2C ? window.ParkFinderSprint2C.initBackend() : null; },
+  setSupabaseClientOverride: function (mockClient, mode) {
+    if (window.ParkFinderSupabase) window.ParkFinderSupabase.setClientOverride(mockClient, mode || 'supabase');
+    if (window.ParkFinderSprint2C) return window.ParkFinderSprint2C.initBackend({ skipProbe: true });
+    return null;
+  },
+  exportBookingsCsv: function () { return window.ParkFinderSprint2C ? window.ParkFinderSprint2C.exportBookingsCsv() : ''; },
   runCoreQaSuite: Core.runCoreAcceptanceScenarios,
   runSprint02QaSuite: Core.runSprint02AcceptanceScenarios,
   runSprint02bQaSuite: Core.runSprint02bAcceptanceScenarios

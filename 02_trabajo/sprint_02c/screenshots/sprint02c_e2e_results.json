@@ -1,0 +1,67 @@
+{
+  "passed": 10,
+  "total": 10,
+  "results": [
+    {
+      "id": "S2C-E01",
+      "description": "Anonymous browsing, offline auth refusal & Reserve auth prompt",
+      "status": "PASS",
+      "actual": "offlineNoFakeAuth=True, anonBrowse=OK, reservePromptsAuth=True, socialFutureDisabled=2"
+    },
+    {
+      "id": "S2C-E02",
+      "description": "Registration, auto-profile/role display & profile editing",
+      "status": "PASS",
+      "actual": "registered=user_a@example.com, role=driver, profileSaved=OK"
+    },
+    {
+      "id": "S2C-E03",
+      "description": "Vehicle CRUD (create, multi-vehicle, delete unused)",
+      "status": "PASS",
+      "actual": "added=2, deletedUnused=1, remainingDefault=AA 100 PF"
+    },
+    {
+      "id": "S2C-E04",
+      "description": "Centralized Hold Checkout, live timer, MP Sprint 2D stub, confirm & FK vehicle guard",
+      "status": "PASS",
+      "actual": "holdTimer=09:59, confirmed=PF-2026-SB101, ics+share=visible, fkDeleteBlocked=True"
+    },
+    {
+      "id": "S2C-E05",
+      "description": "Expired temporary hold blocks confirmation and prevents overbooking",
+      "status": "PASS",
+      "actual": "holdExpiredBlockedConfirm=True, reholdOffered=True"
+    },
+    {
+      "id": "S2C-E06",
+      "description": "My Bookings tabs, no auto-completed, Event History & Extend Stay preview/confirm",
+      "status": "PASS",
+      "actual": "completedAutoEmpty=True, events=hold_created+confirmed_demo, extended=(+ARS 6.500 -> ARS 19.500)"
+    },
+    {
+      "id": "S2C-E07",
+      "description": "Cross-device sync (Device 1 -> fresh Device 2) & strict multi-user isolation (User B)",
+      "status": "PASS",
+      "actual": "device2Synced(bookings=2,veh=1,favs=1), userBIsolated(0/0/0)"
+    },
+    {
+      "id": "S2C-E08",
+      "description": "Connection failure blocks confirmation and displays explicit retry banner",
+      "status": "PASS",
+      "actual": "networkErrorHandled=True, noSilentOfflineConfirm=True, retryBannerVisible=True"
+    },
+    {
+      "id": "S2C-E09",
+      "description": "Notification preferences sync (6 kinds) + Personal Analytics & CSV export",
+      "status": "PASS",
+      "actual": "notifToggles=6(synced), analyticsKpis=4, csvExported=OK"
+    },
+    {
+      "id": "S2C-E10",
+      "description": "Bilingual ES/EN, Dark mode, Mobile 390x844 zero overflow & 2x DPR screenshots",
+      "status": "PASS",
+      "actual": "es+en=OK, desktopOverflow=False, mobile390Overflow=False, jsErrors=0, screenshots=7"
+    }
+  ],
+  "consoleErrors": []
+}
