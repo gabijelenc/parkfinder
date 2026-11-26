@@ -300,8 +300,8 @@ BEGIN
     RAISE EXCEPTION 'DB-T10a FAILED User B cancelled User A booking: %', v_res;
   END IF;
 
-  v_res := public.pf_extend_booking(v_b1_id, (v_tue || ' 14:00-03')::timestamptz);
-  IF (v_res->>'code') <> 'BOOKING_NOT_FOUND' THEN
+  v_res := public.pf_extend_booking(v_b1_id, gen_random_uuid());
+  IF (v_res->>'code') <> 'QUOTE_NOT_FOUND' THEN
     RAISE EXCEPTION 'DB-T10b FAILED User B extended User A booking: %', v_res;
   END IF;
 
@@ -360,7 +360,7 @@ BEGIN
     RAISE EXCEPTION 'DB-T11d FAILED preview extension: %', v_res2;
   END IF;
 
-  v_res3 := public.pf_extend_booking(v_b1_id, (v_tue || ' 12:00-03')::timestamptz);
+  v_res3 := public.pf_extend_booking(v_b1_id, (v_res2->>'quoteId')::uuid);
   IF NOT (v_res3->>'ok')::boolean
      OR (v_res3->>'totalAmount')::numeric <> (v_locked_total + (v_res2->>'incrementalAmount')::numeric) THEN
     RAISE EXCEPTION 'DB-T11e FAILED extend booking: %', v_res3;
