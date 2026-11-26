@@ -12,36 +12,39 @@
 
 | Prueba | Resultado | Evidencia/observación |
 |---|---|---|
-| Conexión con Supabase | Parcial, conexión alcanzada | La UI indica “Backend Supabase · Centralizado”; Auth respondió con límite de email. La lista comercial de la portada se identifica en la propia UI como sintética/local. |
-| Ocho estacionamientos comerciales | PASS visual | Se mostraron ocho opciones y ocho disponibles. |
-| Registro | BLOCKED | El intento con correo sintético de formato válido devolvió “email rate limit exceeded”; dos formatos anteriores fueron rechazados como correo inválido. No se confirmó si Auth persistió un usuario no verificado y no se repitió el registro tras el rate limit. |
-| Inicio de sesión | FAIL | El intento con la misma identidad sintética devolvió “Invalid login credentials”; no se estableció sesión. |
-| Vehículos | BLOCKED | La pestaña exige iniciar sesión. |
-| Búsqueda | PASS | Palermo Soho reordenó los ocho resultados. |
-| Filtros | PASS | Precio máximo ARS 10.000 produjo 4 resultados; “Solo disponibles” + “Carga EV” produjo 2. |
-| Crear reserva | BLOCKED | “Reservar” abrió el requisito de inicio de sesión; no se creó hold ni reserva. |
-| Pago en estacionamiento / pago simulado | BLOCKED | Checkout no accesible sin sesión. |
-| Mercado Pago deshabilitado | NO VERIFICADO en UI | No hubo controles de pago accesibles sin autenticación. |
-| Extensión y aceptación de cotización | BLOCKED | No fue posible llegar al flujo autenticado. |
-| Cancelación e historial | BLOCKED | No hubo sesión ni reservas; el contador de reservas se mantuvo en cero. |
-| Indicadores financieros | PARCIAL | La pestaña Métricas mostró valores de visitante en cero y duración real como no disponible; no se probaron cifras asociadas a usuario. |
-| Cierre de sesión | NO APLICA | No se estableció una sesión. |
-| Español / inglés | PASS | El contenido y la navegación cambiaron a inglés y regresaron a español. |
-| Tema claro / oscuro | PASS | El atributo de tema cambió y el fondo calculado pasó a oscuro. |
-| Escritorio 1440 × 900 | PASS parcial | Captura visual revisada; ancho del documento no excedió el área. |
-| Móvil 390 × 844 | PASS tras corrección | Sin overflow horizontal. El botón “Ver mapa” se movió a la parte inferior del mapa; se midió cero intersecciones con tarjetas. |
-| Errores de consola | PASS | Cero errores/advertencias registrados en la sesión del navegador. |
-| Comunicación Supabase | Parcial | Auth respondió con error de rate limit en registro y credenciales inválidas en login; no se observaron otros fallos. |
-| Rutas privadas públicas | PASS | Solicitudes a migración SQL, documentación interna, wrangler.jsonc y .assetsignore no devolvieron el contenido del archivo. |
-| Accesibilidad básica | PASS parcial | Cero imágenes sin alt y cero controles observados sin nombre accesible por la inspección DOM básica. Contraste y navegación completa por teclado no se auditaron. |
+| Conexión con Supabase | PASS | UI muestra backend centralizado; login, perfil, vehículos, reservas, historial y métricas respondieron a través de Supabase. |
+| Ocho estacionamientos comerciales | PASS visual | Se mostraron las ocho opciones comerciales sintéticas. |
+| Perfiles/roles de ambos usuarios | PASS (lectura previa) | `qa.driver@parkfinder.example` y `qa.driver2@parkfinder.example` tienen perfil y rol `driver`. |
+| Registro | NO EJECUTADO en esta pasada | Los usuarios ya habían sido creados y auto-confirmados por el usuario. |
+| Inicio de sesión | PASS | Se inició sesión con `qa.driver@parkfinder.example`; perfil autenticado visible. |
+| Gestión de vehículos | PASS parcial | Se creó y editó vehículo sintético `QAPF2611`; queda persistido en la cuenta QA. No se borró. |
+| Búsqueda y filtros | PASS | Palermo Soho reordenó resultados; precio máximo ARS 10.000 dio 4 resultados; disponibilidad + carga EV dio 2. |
+| Crear reserva | PASS | Se crearon reservas sintéticas en el backend y se verificaron códigos en historial. |
+| Pago en estacionamiento | PASS | Reserva persistida con método `pay_at_garage`; tras el fix el recibo mostró «Pagar en cochera». |
+| Pago simulado | PASS | Se creó con `demo_simulated`, `is_test=true`; sin cobro externo. Su reserva luego fue cancelada. |
+| Mercado Pago deshabilitado | PASS / sin transacción | No se activó ni se llamó el proveedor. La preferencia se presenta como preparada para Sprint 2D. |
+| Extensión y aceptación de cotización | PASS | Reserva extendida; se aceptó cotización del servidor. El total actualizado fue ARS 18.000. |
+| Cancelación de reserva | PASS | Cuatro reservas sintéticas quedaron canceladas; UI confirmó «Cupo liberado». |
+| Historial | PASS | Se vieron cuatro reservas y estados cancelados en backend. |
+| Indicadores financieros | PASS funcional | Métricas autenticadas visibles tras cancelación; montos activos volvieron a cero y duración efectiva continúa no disponible hasta Sprint 3. |
+| Cierre de sesión | PASS | UI confirmó «Sesión cerrada correctamente» y volvió a visitante. |
+| Español / inglés | PASS | Idioma alternado y retornado a español. |
+| Modo claro / oscuro | PASS | Ambos temas revisados. |
+| Desktop 1440 × 900 | PASS parcial | Revisado visualmente; ver inspección previa descrita abajo. |
+| Móvil 390 × 844 | PASS tras fix | Sin overflow horizontal; botón de mapa reubicado para evitar superposición con tarjetas. |
+| Errores de consola | PASS previo / no revalidado autenticado | En recorrido anterior se registraron cero; no se capturaron logs de consola durante la sesión autenticada. |
+| Errores de comunicación con Supabase | PASS en flujos probados | Las operaciones autenticadas completaron correctamente. |
+| Rutas de archivos internos | PASS previo | Solicitudes a SQL, documentación interna, configuración Wrangler y `.assetsignore` no expusieron contenidos. |
+| Accesibilidad básica | PASS parcial previo | Inspección básica detectó nombres accesibles y alt; contraste integral y navegación completa por teclado no fueron auditados. |
 
-## Cambio aplicado durante QA
+## Cambios aplicados durante QA
 
-Se corrigió el posicionamiento del control móvil “Ver mapa” en styles.css. Antes se superponía geométricamente con la tarjeta de resultados; después de la corrección, quedó dentro de la zona del mapa y no se intersectó con tarjetas en 390 × 844. Cloudflare desplegó correctamente el commit e6078f2.
+1. Se corrigió el posicionamiento del control móvil «Ver mapa» en `styles.css`; comprobado en Preview.
+2. En `index.html`, el recibo ahora distingue `pay_at_garage` del pago simulado. El Preview confirmó «Pagar en cochera» tras el commit `4aaab0a4de034df9b2597f56794ffdf9d9d51fc7`. Cloudflare Workers Builds: **success**.
 
-## Datos compartidos y posible identidad de prueba
+## Datos de prueba compartidos
 
-Se enviaron datos sintéticos a Supabase Auth con dominio reservado de ejemplo. El registro fue rechazado por límite de correo. No se repitió la operación y no se crearon vehículos, reservas, pagos ni otros datos de negocio. Esta prueba no pudo confirmar si el servicio creó una identidad no verificada antes de devolver el error; una persona con acceso autorizado debe revisar Auth antes de cualquier cleanup.
+Los dos usuarios sintéticos fueron preparados por el usuario y tienen rol `driver`. La sesión autenticada creó/actualizó el vehículo de prueba `QAPF2611` y cuatro reservas. Las cuatro reservas quedaron canceladas y la UI confirmó liberación de cupo. La prueba de pago simulado figura como `demo_simulated` y de prueba (`is_test=true`); no fue una transacción real. El vehículo permanece en la cuenta QA; las reservas y eventos se conservan como historial auditable. No se modificaron políticas ni configuración Supabase.
 
 ## Capturas
 
@@ -49,4 +52,4 @@ Se inspeccionaron visualmente capturas de escritorio, móvil claro y móvil oscu
 
 ## Conclusión y siguiente paso
 
-El despliegue de Preview está técnicamente sano y el defecto visual móvil detectado fue corregido. **Sprint 2C.1 no está listo para publicación definitiva ni para autorizar el merge del PR #2**: hace falta que una persona prepare o aporte una identidad sintética verificada y repita registro/login, vehículos, reservas, pagos de demo, extensión, cancelación, historial e indicadores. Mercado Pago debe continuar deshabilitado.
+El Preview está desplegado y el check de Cloudflare pasó para el commit `4aaab0a4de034df9b2597f56794ffdf9d9d51fc7`. Se completaron los flujos autenticados principales con datos sintéticos, incluidos pagos demo, extensión, aceptación y cancelación. Mercado Pago continúa deshabilitado. **El Sprint 2C.1 está funcionalmente validado para revisión humana, pero no declaro lista la publicación definitiva ni autorizo el merge** hasta que una persona revise el vehículo y los registros de prueba que permanecen en la base compartida, y el equipo decida si necesita capturas persistidas como requisito de aceptación. No se guardaron PNG y no se registraron logs de consola autenticados en esta pasada. El PR #2 queda abierto y sin fusionar.
