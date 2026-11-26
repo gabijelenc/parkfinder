@@ -27,7 +27,7 @@ La auditoría remota final observó PostgreSQL 17.12, 24 tablas en `public`, RLS
 
 ## Alcance y límites de verificación
 
-Validación de base de datos ejecutada contra Supabase remoto. La prueba paralela fue una comprobación remota con dos llamadas independientes; no se incorporó como ejecución automatizada de CI. Cloudflare Preview: check del commit e6078f2 exitoso y deployment exitoso. URL: https://fix-sprint-02c-database-validation-parkfinder.gjelenc.workers.dev/. Se ejecutó validación funcional/visual parcial en navegador; los flujos autenticados quedaron bloqueados por límites de Supabase Auth. Ver 02_trabajo/sprint_02c1/qa_final/resultados.md. No se verificó el contrato vigente de Orders API ni se hizo llamada externa. No se ejecutaron pagos ni se habilitó el proveedor.
+Validación de base de datos ejecutada contra Supabase remoto. La prueba paralela fue una comprobación remota con dos llamadas independientes; no se incorporó como ejecución automatizada de CI. Cloudflare Preview confirmó build/deployment para el commit de corrección de interfaz 4aaab0a4de034df9b2597f56794ffdf9d9d51fc7 y URL https://fix-sprint-02c-database-validation-parkfinder.gjelenc.workers.dev/. La sesión autenticada completó los flujos principales; ver la sección QA final y 02_trabajo/sprint_02c1/qa_final/resultados.md. No se verificó el contrato vigente de Orders API ni se hizo llamada externa. El pago demo no movió dinero; Mercado Pago no se habilitó.
 
 ## Capacidad MCP
 
