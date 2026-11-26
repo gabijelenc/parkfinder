@@ -25,7 +25,7 @@ BEGIN;
 -- -----------------------------------------------------------------------------
 INSERT INTO public.parking_facilities (
   slug, name, address, city, latitude, longitude,
-  base_hourly_rate, currency, max_height_m, total_spaces,
+  base_hourly_rate, currency, max_height_m, total_spaces, total_capacity,
   is_active, is_demo, is_qa, data_provenance,
   rating_score, review_count, main_image, gallery_json
 )
@@ -37,7 +37,7 @@ VALUES
     'Av. del Sol 1141, Puerto Madero, CABA',
     'Buenos Aires',
     -34.6074, -58.3610,
-    6500.00, 'ARS', 2.40, 120,
+    6500.00, 'ARS', 2.40, 120, 120,
     true, true, false, 'synthetic_demo',
     4.80, 142, 'assets/garages/puerto-madero-main.svg',
     '[
@@ -53,7 +53,7 @@ VALUES
     'Gurruchaga 1500, Palermo Soho, CABA',
     'Buenos Aires',
     -34.5885, -58.4290,
-    5600.00, 'ARS', 2.00, 80,
+    5600.00, 'ARS', 2.00, 80, 80,
     true, true, false, 'synthetic_demo',
     4.60, 98, 'assets/garages/palermo-soho-main.svg',
     '[
@@ -68,7 +68,7 @@ VALUES
     'Av. Corrientes 1240, Microcentro, CABA',
     'Buenos Aires',
     -34.6049, -58.3778,
-    6000.00, 'ARS', 2.60, 150,
+    6000.00, 'ARS', 2.60, 150, 150,
     true, true, false, 'synthetic_demo',
     4.40, 215, 'assets/garages/obelisco-main.svg',
     '[
@@ -83,7 +83,7 @@ VALUES
     'Av. Santa Fe 1500, Recoleta, CABA',
     'Buenos Aires',
     -34.5975, -58.3895,
-    6200.00, 'ARS', 1.95, 90,
+    6200.00, 'ARS', 1.95, 90, 90,
     true, true, false, 'synthetic_demo',
     4.70, 118, 'assets/garages/recoleta-main.svg',
     '[
@@ -98,7 +98,7 @@ VALUES
     'Tte. Gral. Perón 4190, Almagro, CABA',
     'Buenos Aires',
     -34.6076, -58.4262,
-    4800.00, 'ARS', 3.00, 100,
+    4800.00, 'ARS', 3.00, 100, 100,
     true, true, false, 'synthetic_demo',
     4.30, 76, 'assets/garages/hospital-italiano-main.svg',
     '[
@@ -113,7 +113,7 @@ VALUES
     'Av. Defensa 830, San Telmo, CABA',
     'Buenos Aires',
     -34.6146, -58.3730,
-    4500.00, 'ARS', 2.10, 60,
+    4500.00, 'ARS', 2.10, 60, 60,
     true, true, false, 'synthetic_demo',
     4.10, 54, 'assets/garages/san-telmo-main.svg',
     '[
@@ -128,7 +128,7 @@ VALUES
     'Av. Federico Lacroze 2200, Colegiales, CABA',
     'Buenos Aires',
     -34.5739, -58.4552,
-    3900.00, 'ARS', 1.80, 70,
+    3900.00, 'ARS', 1.80, 70, 70,
     true, true, false, 'synthetic_demo',
     4.50, 63, 'assets/garages/colegiales-main.svg',
     '[
@@ -143,7 +143,7 @@ VALUES
     'Av. Corrientes 6150, Chacarita, CABA',
     'Buenos Aires',
     -34.5919, -58.4403,
-    3500.00, 'ARS', 2.80, 55,
+    3500.00, 'ARS', 2.80, 55, 55,
     true, true, false, 'synthetic_demo',
     3.90, 41, 'assets/garages/chacarita-main.svg',
     '[
@@ -159,7 +159,7 @@ VALUES
     'Lavalle 900, Microcentro, CABA (Sintético QA)',
     'Buenos Aires',
     -34.6022, -58.3792,
-    6000.00, 'ARS', 1.80, 1,
+    6000.00, 'ARS', 1.80, 1, 1,
     true, true, true, 'synthetic_qa',
     4.50, 24, 'assets/garages/colegiales-main.svg',
     '[{"src":"assets/garages/colegiales-main.svg","captionEs":"Ilustración QA Capacidad 1","captionEn":"QA Capacity 1 Illustration","provenance":"illustrative_svg_demo"}]'::jsonb
@@ -170,7 +170,7 @@ VALUES
     'Av. 9 de Julio 1050, Microcentro, CABA (Sintético QA)',
     'Buenos Aires',
     -34.6056, -58.3815,
-    6000.00, 'ARS', 2.50, 2,
+    6000.00, 'ARS', 2.50, 2, 2,
     true, true, true, 'synthetic_qa',
     4.80, 40, 'assets/garages/puerto-madero-main.svg',
     '[{"src":"assets/garages/puerto-madero-main.svg","captionEs":"Ilustración QA Capacidad 2","captionEn":"QA Capacity 2 Illustration","provenance":"illustrative_svg_demo"}]'::jsonb
@@ -181,7 +181,7 @@ VALUES
     'Av. de Mayo 780, Microcentro, CABA (Sintético QA)',
     'Buenos Aires',
     -34.6088, -58.3775,
-    5000.00, 'ARS', 2.20, 1,
+    5000.00, 'ARS', 2.20, 1, 1,
     true, true, true, 'synthetic_qa',
     4.60, 19, 'assets/garages/obelisco-main.svg',
     '[{"src":"assets/garages/obelisco-main.svg","captionEs":"Ilustración QA 24 hs Nocturno","captionEn":"QA 24/7 Overnight Illustration","provenance":"illustrative_svg_demo"}]'::jsonb
@@ -196,6 +196,7 @@ ON CONFLICT (slug) DO UPDATE SET
   currency = EXCLUDED.currency,
   max_height_m = EXCLUDED.max_height_m,
   total_spaces = EXCLUDED.total_spaces,
+  total_capacity = EXCLUDED.total_capacity,
   is_active = EXCLUDED.is_active,
   is_demo = EXCLUDED.is_demo,
   is_qa = EXCLUDED.is_qa,
