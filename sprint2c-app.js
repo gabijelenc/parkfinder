@@ -939,9 +939,13 @@
         '<p class="muted small" style="margin-bottom:10px">' + host.escapeHtml(ts('profile2c.analyticsNote')) + '</p>' +
         '<div class="analytics-kpis">' +
           '<div class="analytics-kpi"><span>' + host.escapeHtml(ts('profile2c.kpiBookedArs')) + '</span><strong>' + host.formatArs(summary.bookedEstimatedArs) + '</strong></div>' +
+          '<div class="analytics-kpi"><span>' + host.escapeHtml(host.state.lang === 'en' ? 'Pending payment' : 'Pendiente de pago') + '</span><strong>' + host.formatArs(summary.amountPendingArs) + '</strong></div>' +
+          '<div class="analytics-kpi"><span>' + host.escapeHtml(host.state.lang === 'en' ? 'Simulated demo paid' : 'Pagado simulado demo') + '</span><strong>' + host.formatArs(summary.simulatedPaidArs) + '</strong></div>' +
+          '<div class="analytics-kpi"><span>' + host.escapeHtml(host.state.lang === 'en' ? 'Externally approved' : 'Aprobado por proveedor') + '</span><strong>' + host.formatArs(summary.externallyApprovedArs) + '</strong></div>' +
+          '<div class="analytics-kpi"><span>' + host.escapeHtml(host.state.lang === 'en' ? 'Refunded' : 'Reembolsado') + '</span><strong>' + host.formatArs(summary.refundedArs) + '</strong></div>' +
           '<div class="analytics-kpi"><span>' + host.escapeHtml(ts('profile2c.kpiBookingsCount')) + '</span><strong>' + summary.activeOrConfirmedCount + '</strong></div>' +
           '<div class="analytics-kpi"><span>' + host.escapeHtml(ts('profile2c.kpiBookedHours')) + '</span><strong>' + summary.bookedEstimatedHours + ' h</strong></div>' +
-          '<div class="analytics-kpi"><span>' + host.escapeHtml(ts('profile2c.kpiActualHours')) + '</span><strong>' + summary.actualParkedHours + ' h</strong></div>' +
+          '<div class="analytics-kpi"><span>' + host.escapeHtml(ts('profile2c.kpiActualHours')) + '</span><strong>' + (summary.actualParkedHours === null ? (host.state.lang === 'en' ? 'Unavailable' : 'No disponible') : summary.actualParkedHours + ' h') + '</strong></div>' +
         '</div>' +
         '<div class="detail-section-title">' + host.escapeHtml(ts('profile2c.frequentGarages')) + '</div>' +
         freqHtml +
@@ -1157,23 +1161,25 @@
     if (serverAnalytics && serverAnalytics.ok && serverAnalytics.summary) {
       return {
         bookedEstimatedArs: Number(serverAnalytics.summary.bookedEstimatedArs || 0),
+        amountPendingArs: Number(serverAnalytics.summary.amountPendingArs || 0),
+        simulatedPaidArs: Number(serverAnalytics.summary.simulatedPaidArs || 0),
+        externallyApprovedArs: Number(serverAnalytics.summary.externallyApprovedArs || 0),
+        refundedArs: Number(serverAnalytics.summary.refundedArs || 0),
         activeOrConfirmedCount: Number(serverAnalytics.summary.activeOrConfirmedCount || 0),
         bookedEstimatedHours: Number(serverAnalytics.summary.bookedEstimatedHours || 0),
-        actualParkedHours: Number(serverAnalytics.summary.actualParkedHours || 0),
+        actualParkedHours: null,
         frequentGarages: serverAnalytics.frequentGarages || []
       };
     }
     var active = (bookings || []).filter(function (b) { return b.status === 'confirmed' || b.status === 'checked_in' || b.status === 'completed'; });
     var ars = 0;
     var hrs = 0;
-    var actualHrs = 0;
     var byGarage = {};
     active.forEach(function (b) {
       var c = Number(b.cost || b.totalAmount || 0);
       var h = Number(b.hours || (b.durationMinutes ? b.durationMinutes / 60 : 0));
       ars += c;
       hrs += h;
-      if (b.status === 'completed') actualHrs += h;
       var key = b.garage || b.garageId || 'Garage';
       if (!byGarage[key]) byGarage[key] = { facilityName: key, visits: 0, totalArs: 0 };
       byGarage[key].visits++;
@@ -1183,9 +1189,13 @@
       .sort(function (a, b) { return b.visits - a.visits; }).slice(0, 5);
     return {
       bookedEstimatedArs: Math.round(ars),
+      amountPendingArs: 0,
+      simulatedPaidArs: 0,
+      externallyApprovedArs: 0,
+      refundedArs: 0,
       activeOrConfirmedCount: active.length,
       bookedEstimatedHours: Math.round(hrs * 100) / 100,
-      actualParkedHours: Math.round(actualHrs * 100) / 100,
+      actualParkedHours: null,
       frequentGarages: freq
     };
   }
@@ -1339,6 +1349,9 @@
     var code = res.code;
     if (code === 'NETWORK_ERROR') return ts('mode.netErrorText');
     if (code === 'HOLD_EXPIRED') return ts('checkout.holdExpired');
+    if (code === 'QUOTE_EXPIRED' || code === 'QUOTE_STALE' || code === 'QUOTE_CHANGED') return host.state.lang === 'en' ? 'The extension quote changed or expired. Request a new quote and accept the updated amount.' : 'La cotización de extensión cambió o venció. Solicitá una nueva y aceptá el importe actualizado.';
+    if (code === 'PAYMENT_INCREMENT_REQUIRED') return host.state.lang === 'en' ? 'Prepaid bookings require a separately verified incremental payment before extension.' : 'Las reservas prepagas requieren un pago incremental verificado antes de extenderse.';
+    if (code === 'PAYMENT_METHOD_MISMATCH') return host.state.lang === 'en' ? 'The payment method cannot be changed after creating the hold.' : 'No se puede cambiar el medio de pago después de crear la retención.';
     if (code === 'PAST_START_TIME') return host.t('validation.PAST_DATE');
     if (code === 'NO_AVAILABILITY' || code === 'OUT_OF_HOURS' || code === 'VEHICLE_TYPE_NOT_ACCEPTED' || code === 'HEIGHT_EXCEEDS_CLEARANCE' || code === 'EXCEEDS_MAX_DURATION') {
       return host.t('validation.' + code, {
@@ -1361,6 +1374,7 @@
     var quote = (hold && hold.quote) ? hold.quote : ev.quote;
     var vehicles = host.state.vehicles || [];
     var payMethod = host.state.checkoutPaymentMethod || 'pay_at_garage';
+    if (payMethod === 'mercado_pago') { payMethod = 'pay_at_garage'; host.state.checkoutPaymentMethod = payMethod; }
     var holdExpired = !!options.holdExpired || (hold && hold.holdExpiresAt && Date.parse(hold.holdExpiresAt) <= Date.now());
 
     var holdHtml = '';
@@ -1422,16 +1436,12 @@
           '<input type="radio" name="checkoutPayMethod" value="pay_at_garage"' + (payMethod === 'pay_at_garage' ? ' checked' : '') + ' />' +
           '<div><strong>' + host.escapeHtml(ts('checkout.payGarageTitle')) + '</strong><span>' + host.escapeHtml(ts('checkout.payGarageDesc')) + '</span></div>' +
         '</label>' +
-        '<label class="payment-option' + (payMethod === 'mercado_pago' ? ' is-selected' : '') + '">' +
-          '<input type="radio" name="checkoutPayMethod" value="mercado_pago"' + (payMethod === 'mercado_pago' ? ' checked' : '') + ' />' +
-          '<div><strong>' + host.escapeHtml(ts('checkout.payMpTitle')) + '</strong><span>' + host.escapeHtml(ts('checkout.payMpDesc')) + '</span></div>' +
+        '<label class="payment-option' + (payMethod === 'demo_simulated' ? ' is-selected' : '') + '">' +
+          '<input type="radio" name="checkoutPayMethod" value="demo_simulated"' + (payMethod === 'demo_simulated' ? ' checked' : '') + ' />' +
+          '<div><strong>' + host.escapeHtml(host.state.lang === 'en' ? 'Simulated demo payment' : 'Pago simulado de demostración') + '</strong><span>' + host.escapeHtml(host.state.lang === 'en' ? 'Marked as a test simulation; no provider approval or real charge.' : 'Identificado como simulación; sin aprobación de proveedor ni cobro real.') + '</span></div>' +
         '</label>' +
       '</div>' +
-      (payMethod === 'mercado_pago'
-        ? '<div class="detail-footer-note" style="margin-bottom:10px">' + host.escapeHtml(ts('checkout.mpNotice')) +
-            (hold ? ' <button type="button" class="link-btn" id="mpContractStubBtn" style="min-height:auto;padding:0">' + host.escapeHtml(ts('checkout.mpContractBtn')) + '</button>' : '') +
-          '</div>'
-        : '');
+      '<div class="detail-footer-note" style="margin-bottom:10px">' + host.escapeHtml(host.state.lang === 'en' ? 'Mercado Pago Test is pending Sprint 2D activation. It cannot confirm bookings in this demo.' : 'Mercado Pago Test queda pendiente de activación en Sprint 2D. No confirma reservas en esta demo.') + '</div>';
 
     var canConfirm = !!(hold && !holdExpired && !options.errorMessage);
 
@@ -1512,8 +1522,18 @@
     }
 
     Array.prototype.forEach.call(container.querySelectorAll('input[name="checkoutPayMethod"]'), function (rad) {
-      rad.addEventListener('change', function () {
+      rad.addEventListener('change', async function () {
+        var previous = host.state.activeHold;
         host.state.checkoutPaymentMethod = rad.value;
+        if (previous && previous.paymentMethod !== rad.value) {
+          var cancelled = await Sb().cancelBooking(previous.id, 'payment_method_changed');
+          if (!cancelled.ok) { renderServerReserveModal(garage, { errorMessage: mapServerError(cancelled) }); return; }
+          host.state.activeHold = null;
+          host.state.checkoutIdempotencyKey = Sb().generateUuidV4();
+          renderServerReserveModal(garage);
+          await createHoldForCurrentCheckout(garage, host.state.selectedVehicleId);
+          return;
+        }
         renderServerReserveModal(garage, options);
       });
     });
@@ -1613,7 +1633,7 @@
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
             '<button type="button" class="btn btn-primary btn-sm" data-view-qr="' + host.escapeHtml(activeItem.id) + '">' + host.escapeHtml(host.t('bookings.viewQr')) + '</button>' +
-            '<button type="button" class="btn btn-secondary btn-sm" data-extend-booking="' + host.escapeHtml(activeItem.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' +
+            (activeItem.paymentMethod !== 'mercado_pago' && activeItem.paymentMethod !== 'demo_simulated' ? '<button type="button" class="btn btn-secondary btn-sm" data-extend-booking="' + host.escapeHtml(activeItem.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' : '') +
           '</div>' +
         '</div>';
     }
@@ -1676,7 +1696,7 @@
           : (dirUrl ? '<a class="btn btn-ghost btn-sm" href="' + host.escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer">' + host.escapeHtml(host.t('map.directionsShort')) + '</a>' : '') +
             '<button class="btn btn-ghost btn-sm" type="button" data-ics-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.icsBtn')) + '</button>' +
             '<button class="btn btn-ghost btn-sm" type="button" data-share-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.shareBtn')) + '</button>' +
-            (canMutate && !isPending ? '<button class="btn btn-secondary btn-sm" type="button" data-extend-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' : '') +
+            (canMutate && !isPending && b.paymentMethod !== 'mercado_pago' && b.paymentMethod !== 'demo_simulated' ? '<button class="btn btn-secondary btn-sm" type="button" data-extend-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' : '') +
             '<button class="btn btn-secondary btn-sm" type="button" data-view-qr="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(host.t('bookings.viewQr')) + '</button>' +
             (canMutate ? '<button class="btn btn-danger-ghost btn-sm" type="button" data-cancel-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(host.t('bookings.cancel')) + '</button>' : '');
 
@@ -1869,7 +1889,7 @@
     if (!b || !p || !p.ok) return;
 
     if (b.persistenceScope === 'supabase_centralized' && isServerMode()) {
-      var res = await Sb().extendBooking(b.uuid, p.proposedEndsAt);
+      var res = await Sb().extendBooking(b.uuid, p.quoteId);
       if (!res.ok) {
         extendState.error = mapServerError(res);
         renderExtendModal();
@@ -1957,6 +1977,7 @@
               '<div style="display:flex;justify-content:space-between"><span>' + host.escapeHtml(ts('extend.incrementalLabel')) + '</span><strong id="extendIncAmount">+' + host.formatArs(p.incrementalAmount) + '</strong></div>' +
               '<div style="display:flex;justify-content:space-between"><span>' + host.escapeHtml(ts('extend.newTotalLabel')) + '</span><strong id="extendNewTotal">' + host.formatArs(p.newTotalAmount) + '</strong></div>' +
               '<div class="muted small">' + host.escapeHtml(ts('extend.preservedNote')) + '</div>' +
+              (p.quoteExpiresAt ? '<div class="muted small">' + host.escapeHtml((host.state.lang === 'en' ? 'Server quote valid until ' : 'Cotización válida hasta ') + new Date(p.quoteExpiresAt).toLocaleTimeString()) + '</div>' : '') +
             '</div>'
           : '') +
 
@@ -1977,8 +1998,8 @@
       });
     });
 
-    host.q('#extDate', container).addEventListener('change', function (ev) { extendState.newDate = ev.target.value; });
-    host.q('#extTime', container).addEventListener('change', function (ev) { extendState.newTime = ev.target.value; });
+    host.q('#extDate', container).addEventListener('change', function (ev) { extendState.newDate = ev.target.value; extendState.preview = null; extendState.error = null; renderExtendModal(); });
+    host.q('#extTime', container).addEventListener('change', function (ev) { extendState.newTime = ev.target.value; extendState.preview = null; extendState.error = null; renderExtendModal(); });
     host.q('#extPreviewBtn', container).addEventListener('click', previewExtensionNow);
     host.q('#extConfirmBtn', container).addEventListener('click', confirmExtensionNow);
   }
