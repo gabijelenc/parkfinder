@@ -19,9 +19,9 @@ La capa de base de datos de Sprint 2C.1 queda **técnicamente lista para revisi�
 ## Riesgos y pendientes antes de aceptar cambios
 
 - La UI no recibió smoke test visual/funcional en navegador y todavía debe verificarse en móvil, escritorio, claro y oscuro.
-- El check de vista previa de Cloudflare falló para commits previos del PR; no hay URL de preview y el log no fue inspeccionable mediante MCP. No aceptar merge hasta revisar el estado final y diagnosticar este check.
+- El check de vista previa de Cloudflare falló para commits previos del PR; no hay URL de preview ni evidencia de despliegue exitoso. El log no es accesible mediante MCP. No aceptar merge hasta diagnosticar el check del último commit.
 - El contrato oficial de Orders API sigue pendiente de verificación.
-- No se hizo despliegue ni smoke test en Cloudflare.
+- No se publicó el Worker ni se hizo smoke test; solo se disparó la verificación automática de preview del PR, que falló en ejecuciones previas.
 - El funcionamiento de webhook, reconciliación, pago tardío y reembolso pertenece a Sprint 2D y no está implementado.
 - No fusionar este PR automáticamente.
 
