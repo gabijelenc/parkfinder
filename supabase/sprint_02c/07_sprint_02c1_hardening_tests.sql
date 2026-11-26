@@ -102,8 +102,9 @@ BEGIN
   IF NOT COALESCE((q2->>'idempotentReplay')::boolean,false) THEN RAISE EXCEPTION 'duplicate quote application was not idempotent: %',q2; END IF;
   IF (SELECT count(*) FROM public.booking_events WHERE booking_id=bid AND event_type='extended')<>1
     OR (SELECT count(*) FROM public.audit_logs WHERE entity_id=bid AND action='booking.extended')<>1
+    OR (SELECT amount FROM public.payments WHERE booking_id=bid AND status='pending')<>(SELECT total_amount FROM public.bookings WHERE id=bid)
     THEN RAISE EXCEPTION 'extension event/audit records missing or duplicated'; END IF;
-  INSERT INTO pf_hardening_results VALUES('H06','PASS','Valid server quote accepted once; duplicate replays without duplicate events');
+  INSERT INTO pf_hardening_results VALUES('H06','PASS','Valid quote accepted once; replay is idempotent; one event/audit and pending payment equals updated total');
 
   -- Expired quote is rejected.
   q1 := public.pf_preview_booking_extension(bid,'2027-03-03 11:00-03'::timestamptz);
@@ -161,6 +162,42 @@ BEGIN
      OR (res->'summary'->>'refundedArs') IS NULL
      THEN RAISE EXCEPTION 'financial analytics response contract mismatch: %',res; END IF;
   INSERT INTO pf_hardening_results VALUES('H11','PASS','Analytics separates pending/simulated/external/refund and reports actual time unavailable');
+
+
+  -- A stale overlapping hold is expired under the facility lock before extension capacity is reallocated.
+  hold := public.pf_create_booking_hold(fac,va,'2027-03-06 08:00-03'::timestamptz,'2027-03-06 09:00-03'::timestamptz,'pay_at_garage',gen_random_uuid());
+  IF NOT COALESCE((hold->>'ok')::boolean,false) THEN RAISE EXCEPTION 'stale hold fixture A failed: %',hold; END IF;
+  bid := (hold->'booking'->>'id')::uuid;
+  PERFORM public.pf_confirm_booking_demo(bid,'pay_at_garage');
+  PERFORM set_config('request.jwt.claims',json_build_object('sub',ub::text,'role','authenticated')::text,true);
+  PERFORM set_config('request.jwt.claim.sub',ub::text,true);
+  q1 := public.pf_create_booking_hold(fac,vb,'2027-03-06 09:00-03'::timestamptz,'2027-03-06 10:00-03'::timestamptz,'pay_at_garage',gen_random_uuid());
+  IF NOT COALESCE((q1->>'ok')::boolean,false) THEN RAISE EXCEPTION 'stale hold fixture B failed: %',q1; END IF;
+  UPDATE public.bookings SET hold_expires_at=now()-interval '1 minute' WHERE id=(q1->'booking'->>'id')::uuid;
+  PERFORM set_config('request.jwt.claims',json_build_object('sub',ua::text,'role','authenticated')::text,true);
+  PERFORM set_config('request.jwt.claim.sub',ua::text,true);
+  q2 := public.pf_preview_booking_extension(bid,'2027-03-06 10:00-03'::timestamptz);
+  IF NOT COALESCE((q2->>'ok')::boolean,false) THEN RAISE EXCEPTION 'stale hold preview failed: %',q2; END IF;
+  res := public.pf_extend_booking(bid,(q2->>'quoteId')::uuid);
+  IF NOT COALESCE((res->>'ok')::boolean,false)
+     OR (SELECT status FROM public.bookings WHERE id=(q1->'booking'->>'id')::uuid)<>'expired'
+     OR (SELECT status FROM public.payments WHERE booking_id=(q1->'booking'->>'id')::uuid)<>'cancelled'
+     THEN RAISE EXCEPTION 'stale hold prevented extension or failed cleanup: %',res; END IF;
+  INSERT INTO pf_hardening_results VALUES('H13','PASS','Expired overlapping hold cleaned under facility lock before extension allocation');
+
+  -- Operating hours are revalidated at quote acceptance, not just at preview time.
+  hold := public.pf_create_booking_hold(fac,va,'2027-03-08 08:00-03'::timestamptz,'2027-03-08 09:00-03'::timestamptz,'pay_at_garage',gen_random_uuid());
+  IF NOT COALESCE((hold->>'ok')::boolean,false) THEN RAISE EXCEPTION 'hours fixture hold failed: %',hold; END IF;
+  bid := (hold->'booking'->>'id')::uuid;
+  PERFORM public.pf_confirm_booking_demo(bid,'pay_at_garage');
+  q1 := public.pf_preview_booking_extension(bid,'2027-03-08 10:00-03'::timestamptz);
+  IF NOT COALESCE((q1->>'ok')::boolean,false) THEN RAISE EXCEPTION 'hours fixture preview failed: %',q1; END IF;
+  UPDATE public.operating_hours SET is_24_hours=false,is_closed=false,opening_time='08:00',closing_time='09:30'
+    WHERE facility_id=fac AND day_of_week=1;
+  res := public.pf_extend_booking(bid,(q1->>'quoteId')::uuid);
+  IF res->>'code'<>'OUT_OF_HOURS' OR (SELECT ends_at FROM public.bookings WHERE id=bid)<>'2027-03-08 09:00-03'::timestamptz
+    THEN RAISE EXCEPTION 'changed operating hours were ignored: %',res; END IF;
+  INSERT INTO pf_hardening_results VALUES('H14','PASS','Changed operating hours invalidate extension acceptance; original booking remains');
 
   -- RLS regression: quote rows are not directly visible or writable to authenticated.
   IF has_table_privilege('authenticated','public.booking_extension_quotes','SELECT')
