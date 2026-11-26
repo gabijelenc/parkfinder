@@ -25,4 +25,4 @@ La capa de base de datos de Sprint 2C.1 queda **técnicamente lista para revisi�
 
 ## Próximo paso
 
-Revisar el PR hacia `improvements`, correr CI y el smoke test de la interfaz. Luego puede iniciarse Sprint 2D como trabajo de arquitectura/contrato en entorno de pruebas, manteniendo Checkout Pro deshabilitado hasta implementar y validar Worker, autenticidad de webhook e idempotencia transaccional.
+Revisar el PR hacia `improvements`, correr CI y el smoke test de la interfaz. Sprint 2D no se inicia como parte de esta entrega; si se autoriza por separado, el primer trabajo será verificar el contrato vigente y diseñar Worker/webhook en entorno de pruebas, manteniendo Checkout Pro deshabilitado hasta implementar y validar la autenticidad, verificación server-to-server e idempotencia transaccional.
