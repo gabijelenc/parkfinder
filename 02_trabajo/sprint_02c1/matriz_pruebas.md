@@ -18,10 +18,11 @@
 | H10 | Expiración sincroniza booking/payment/events/audit | SQL remoto Supabase | PASS |
 | H11 | Analítica financiera separada y duración efectiva no disponible | SQL remoto Supabase | PASS |
 | H12 | Sin grants directos a la tabla de cotizaciones; RLS activo | SQL remoto Supabase | PASS |
-| H13 | Dos extensiones concurrentes con la misma cotización | Dos sesiones MCP simultáneas remotas | PASS: dos respuestas exitosas, replay idempotente, 1 extensión/evento/auditoría |
+| H13 | Dos extensiones concurrentes con la misma cotización | Dos sesiones MCP simultáneas remotas | PASS: replay idempotente; 1 extensión, evento reserva, evento pago, auditoría; saldo = total |
+| H14 | Horarios cambiados entre cotización y aceptación | SQL remoto Supabase | PASS: rechaza y mantiene la reserva original |
 
 ## Casos críticos y cobertura explícita
 
 La manipulación de importe se bloquea en el contrato porque `pf_extend_booking(uuid, uuid)` no recibe importes; el importe se vuelve a calcular en PostgreSQL. La prueba H05 inspecciona la firma y comprueba que el usuario autenticado no puede modificar directamente `payments`. La actualización de precio se comprueba en H08. Las extensiones pagas/simuladas requieren pago incremental y no se habilitan desde la interfaz. H06 confirma que el importe pendiente se incrementa con el nuevo total.
 
-Pruebas ejecutadas: remotas SQL en Supabase y prueba remota paralela MCP. Pruebas locales de navegador y flujos visuales: **no ejecutadas**. El check de preview de Cloudflare en GitHub terminó fallido para commits previos y está en proceso para el último commit; no hay URL de preview. El build log no pudo inspeccionarse vía MCP. Pruebas de MP reales o sandbox externo: **no ejecutadas y fuera de alcance**. No se usaron datos personales.
+Pruebas ejecutadas: remotas SQL en Supabase y prueba remota paralela MCP. Pruebas locales de navegador y flujos visuales: **no ejecutadas**. El check de preview de Cloudflare en GitHub falló para commits previos; el último check estaba en proceso al actualizar este informe. No hay URL de preview ni evidencia de despliegue exitoso. El build log no pudo inspeccionarse vía MCP. Pruebas de MP reales o sandbox externo: **no ejecutadas y fuera de alcance**. No se usaron datos personales.
