@@ -27,8 +27,20 @@ La auditoría remota final observó PostgreSQL 17.12, 24 tablas en `public`, RLS
 
 ## Alcance y límites de verificación
 
-Validación de base de datos ejecutada contra Supabase remoto. La prueba paralela fue una comprobación remota con dos llamadas independientes; no se incorporó como ejecución automatizada de CI. La vista previa de Cloudflare reportó fallos en los commits del PR y aún no hay URL de preview. No se probó la interfaz en navegador ni en la URL publicada. El detalle del build no está disponible mediante GitHub/Supabase MCP. No se verificó el contrato vigente de Orders API ni se hizo llamada externa. No se ejecutaron pagos ni se habilitó el proveedor.
+Validación de base de datos ejecutada contra Supabase remoto. La prueba paralela fue una comprobación remota con dos llamadas independientes; no se incorporó como ejecución automatizada de CI. Cloudflare Preview: check del commit e6078f2 exitoso y deployment exitoso. URL: https://fix-sprint-02c-database-validation-parkfinder.gjelenc.workers.dev/. Se ejecutó validación funcional/visual parcial en navegador; los flujos autenticados quedaron bloqueados por límites de Supabase Auth. Ver 02_trabajo/sprint_02c1/qa_final/resultados.md. No se verificó el contrato vigente de Orders API ni se hizo llamada externa. No se ejecutaron pagos ni se habilitó el proveedor.
 
 ## Capacidad MCP
 
 La conexión Supabase MCP permite escritura: se aplicaron las migraciones autorizadas. Durante la auditoría también se ejecutaron lecturas. Esta evidencia de escritura no implica que haya quedado activo un rol administrativo o una credencial en el repositorio.
+
+## QA final del Preview — 2026-11-26
+
+El preview funcional se probó en navegador en escritorio (1440 × 900) y móvil (390 × 844). La búsqueda, filtros, ocho opciones, español/inglés, tema claro/oscuro y acceso público a rutas protegidas se probaron. Un solapamiento del control móvil con tarjetas se corrigió en styles.css y se confirmó en el nuevo preview de Cloudflare (check y deployment exitosos, commit e6078f2).
+
+La conexión a Supabase se alcanzó desde Auth: el registro sintético devolvió “email rate limit exceeded” y el inicio de sesión devolvió “Invalid login credentials”. No se estableció sesión y las acciones de reserva, vehículo, pago, extensión, cancelación e historial no pudieron probarse. Como preview y producción comparten base, no se repitieron altas ni se crearon reservas. La llamada de registro pudo alcanzar Auth sin crear un usuario; su persistencia no se pudo confirmar desde esta prueba.
+
+No hubo errores de consola en la sesión observada; la respuesta de Auth por límite de correo fue el único error funcional observado. No hubo desbordamiento horizontal ni imágenes sin atributo alt; los controles interactivos observados tuvieron nombre accesible. El panel de métricas visitante mostró ceros y duración real no disponible.
+
+Los PNG no quedaron guardados: la automatización produjo capturas visuales temporales, pero el intento de exportarlas a archivos locales no generó archivos en el workspace. No se atribuyen como evidencia persistida. El detalle completo, estados y límites están en 02_trabajo/sprint_02c1/qa_final/resultados.md.
+
+**Conclusión:** el preview es desplegable, pero Sprint 2C.1 no está listo para publicación definitiva ni para autorizar merge hasta que un usuario de prueba verificado permita ejecutar los flujos autenticados y se confirme el estado del posible usuario sintético.
