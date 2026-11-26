@@ -1,11 +1,11 @@
 id,requirement,scenario,expected,status,evidence
-T01,PF-01,Capacity 1; 08-11 then 11-13,Both accepted,NOT_RUN,
-T02,PF-02,Capacity 1; 08-11 then 10-12,Second rejected,NOT_RUN,
-T03,PF-01,Capacity 2; 08-09 and 10-11; request 08-11,One additional booking possible,NOT_RUN,
-T04,PF-01,Cancel overlapping reservation,Capacity released,NOT_RUN,
-T05,PF-03,Unsupported vehicle,Booking rejected,NOT_RUN,
-T06,PF-04,Compare car and SUV,Quote differs,NOT_RUN,
-T07,PF-04,Change rates after confirmation,Stored quote unchanged,NOT_RUN,
-T08,PF-13,Reload page,Bookings persist,NOT_RUN,
-T09,PF-13,Map failure,Fallback available with explicit limits,NOT_RUN,
-T10,PF-02,Repeat submit,No duplicate local booking,NOT_RUN,
+T01,PF-01,Capacity 1; 08-11 then 11-13,Both accepted,PASS_AUTOMATED_PENDING_REVIEW,Node core_booking_tests.js + Playwright e2e_browser_acceptance.py (feature/sprint-01-core-booking): both bookings confirmed with half-open BA intervals
+T02,PF-02,Capacity 1; 08-11 then 10-12,Second rejected,PASS_AUTOMATED_PENDING_REVIEW,Node + Playwright: first confirmed; second blocked with NO_AVAILABILITY
+T03,PF-01,Capacity 2; 08-09 and 10-11; request 08-11,One additional booking possible,PASS_AUTOMATED_PENDING_REVIEW,Node + Playwright: peakBefore=1 availBefore=1/2; extra1 confirmed; extra2 blocked (0/2)
+T04,PF-01,Cancel overlapping reservation,Capacity released,PASS_AUTOMATED_PENDING_REVIEW,Node + Playwright: booking marked status=cancelled with cancelledAt audit trail; interval released and rebooked
+T05,PF-03,Unsupported vehicle (plus invalid date/time/duration/out-of-hours),Booking rejected,PASS_AUTOMATED_PENDING_REVIEW,Node (8 cases) + Playwright: invalid date/negative duration/SUV incompatible/height/out-of-hours all rejected
+T06,PF-04,Compare car and SUV (hourly segment quote + single ARS rounding),Quote differs,PASS_AUTOMATED_PENDING_REVIEW,Node + Playwright: Car=ARS 14.280 vs SUV=ARS 18.564 (2 segments peak+occ); fractional single round=1431
+T07,PF-04,Change rates after confirmation,Stored quote unchanged,PASS_AUTOMATED_PENDING_REVIEW,Node + Playwright: locked ARS 12.000 unchanged after garage rate mutated to ARS 15.000/h
+T08,PF-13,Reload page + storage write failure,Bookings persist and storage error prevents false confirmation,PASS_AUTOMATED_PENDING_REVIEW,Node + Playwright: QuotaExceededError blocked confirmation with inline/toast error; normal booking persisted across reload and sandbox
+T09,PF-13,Map failure,Fallback available with explicit limits,PASS_AUTOMATED_PENDING_REVIEW,Playwright (external network aborted + offline switch): offline banner visible; 8 local cards and booking flow functional
+T10,PF-02,Repeat submit,No duplicate local booking,PASS_AUTOMATED_PENDING_REVIEW,Node + Playwright: 3 synchronous submits yielded 1 booking (OK/DUPLICATE_SUBMISSION/DUPLICATE_SUBMISSION) with local-only disclosure
