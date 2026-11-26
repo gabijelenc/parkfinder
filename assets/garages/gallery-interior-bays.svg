@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Ilustración de plazas interiores señalizadas con sensores de disponibilidad">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="mintGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0B1220"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#94A3B8" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#334155" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  
+    <rect x="0" y="0" width="640" height="120" fill="#0F172A"/>
+    <rect x="0" y="236" width="640" height="124" fill="url(#floor)"/>
+    <!-- Perspective structural ribs -->
+    <g stroke="#334155" stroke-width="3" fill="none">
+      <rect x="52" y="42" width="536" height="194"/>
+      <rect x="116" y="72" width="408" height="164"/>
+      <line x1="52" y1="42" x2="116" y2="72"/>
+      <line x1="588" y1="42" x2="524" y2="72"/>
+    </g>
+    <!-- Overhead sensor indicators -->
+    <circle cx="195" cy="96" r="7" fill="#34D399"/>
+    <circle cx="320" cy="96" r="7" fill="#34D399"/>
+    <circle cx="445" cy="96" r="7" fill="#64748B"/>
+    <!-- Bay numbers -->
+    <text x="195" y="136" text-anchor="middle" fill="#94A3B8" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="800">A-12</text>
+    <text x="320" y="136" text-anchor="middle" fill="#34D399" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="800">A-13 · LIBRE</text>
+    <text x="445" y="136" text-anchor="middle" fill="#94A3B8" font-family="Inter,system-ui,sans-serif" font-size="14" font-weight="800">A-14</text>
+    <path d="M120 360 L195 236 M260 360 L282 236 M380 360 L358 236 M520 360 L445 236" stroke="#34D399" stroke-opacity="0.45" stroke-width="3"/>
+    <g transform="translate(195,240) scale(0.85)">
+      <ellipse cx="0" cy="36" rx="54" ry="9" fill="#020617" opacity="0.55"/>
+      <path d="M-38 2 L-28 -20 C-25 -26 -19 -28 -12 -28 L12 -28 C19 -28 25 -26 28 -20 L38 2 Z" fill="#CBD5E1" opacity="0.95"/>
+      <path d="M-26 -2 L-20 -18 C-18 -22 -14 -23 -8 -23 L8 -23 C14 -23 18 -22 20 -18 L26 -2 Z" fill="#0B1220" opacity="0.78"/>
+      <rect x="-46" y="0" width="92" height="26" rx="9" fill="#CBD5E1"/>
+      <rect x="-40" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="24" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="-38" y="7" width="16" height="6" rx="3" fill="#34D399"/>
+      <rect x="22" y="7" width="16" height="6" rx="3" fill="#34D399"/>
+      <rect x="-15" y="9" width="30" height="8" rx="3" fill="#334155"/>
+      <rect x="-10" y="12" width="20" height="2" rx="1" fill="#94A3B8"/>
+    </g>
+    <g transform="translate(445,240) scale(0.85)">
+      <ellipse cx="0" cy="36" rx="54" ry="9" fill="#020617" opacity="0.55"/>
+      <path d="M-38 2 L-28 -20 C-25 -26 -19 -28 -12 -28 L12 -28 C19 -28 25 -26 28 -20 L38 2 Z" fill="#94A3B8" opacity="0.95"/>
+      <path d="M-26 -2 L-20 -18 C-18 -22 -14 -23 -8 -23 L8 -23 C14 -23 18 -22 20 -18 L26 -2 Z" fill="#0B1220" opacity="0.78"/>
+      <rect x="-46" y="0" width="92" height="26" rx="9" fill="#94A3B8"/>
+      <rect x="-40" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="24" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="-38" y="7" width="16" height="6" rx="3" fill="#64748B"/>
+      <rect x="22" y="7" width="16" height="6" rx="3" fill="#64748B"/>
+      <rect x="-15" y="9" width="30" height="8" rx="3" fill="#334155"/>
+      <rect x="-10" y="12" width="20" height="2" rx="1" fill="#94A3B8"/>
+    </g>
+    
+</svg>

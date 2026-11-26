@@ -292,14 +292,17 @@ def run_suite():
 
             # T09: map unavailable (offline mode + Leaflet blocked); list & bookings remain accessible
             def t09():
+                page.click("#statusBtn")
+                page.wait_for_selector("#statusModal.show")
                 page.check("#offlineSwitch")
+                page.click('#statusModal [data-close="statusModal"]')
                 assert not page.locator("#offlineBanner").is_hidden()
                 assert not page.locator("#mapDown").is_hidden()
                 assert page.locator("#resultsList .card").count() == 8
                 set_search(page, "2026-12-17", "10:00", "12:00", "motorcycle")
                 bid, _ = book_garage_via_ui(page, "garage-puerto-madero", "T09 001")
                 page.screenshot(path=str(SCREENSHOT_DIR / "03_offline_fallback.png"))
-                page.uncheck("#offlineSwitch")
+                page.click("#offlineBannerBtn")
                 return f"offlineBannerVisible=True, listCards=8, bookedWhileOffline={bid}"
 
             record("T09", "Map unavailable / offline fallback keeps list, pricing and bookings functional", t09)

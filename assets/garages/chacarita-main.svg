@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Ilustración arquitectónica de estacionamiento abierto amplio en Chacarita">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="mintGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0B1220"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#94A3B8" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#334155" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  
+    <rect x="0" y="226" width="640" height="134" fill="url(#floor)"/>
+    <!-- Wide horizon & lighting towers -->
+    <g fill="#162238">
+      <rect x="30" y="120" width="90" height="106" rx="4"/>
+      <rect x="520" y="110" width="90" height="116" rx="4"/>
+    </g>
+    <line x1="160" y1="68" x2="160" y2="226" stroke="#475569" stroke-width="4"/>
+    <line x1="480" y1="68" x2="480" y2="226" stroke="#475569" stroke-width="4"/>
+    <rect x="142" y="62" width="36" height="10" rx="4" fill="#34D399"/>
+    <rect x="462" y="62" width="36" height="10" rx="4" fill="#34D399"/>
+    <polygon points="160,72 95,226 225,226" fill="url(#mintGlow)" opacity="0.38"/>
+    <polygon points="480,72 415,226 545,226" fill="url(#mintGlow)" opacity="0.38"/>
+    <path d="M90 360 L175 226 M260 360 L285 226 M380 360 L355 226 M550 360 L465 226" stroke="#94A3B8" stroke-opacity="0.4" stroke-width="3"/>
+    <g transform="translate(215,240) scale(0.9)">
+      <ellipse cx="0" cy="36" rx="54" ry="9" fill="#020617" opacity="0.55"/>
+      <path d="M-38 2 L-28 -20 C-25 -26 -19 -28 -12 -28 L12 -28 C19 -28 25 -26 28 -20 L38 2 Z" fill="#F8FAFC" opacity="0.95"/>
+      <path d="M-26 -2 L-20 -18 C-18 -22 -14 -23 -8 -23 L8 -23 C14 -23 18 -22 20 -18 L26 -2 Z" fill="#0B1220" opacity="0.78"/>
+      <rect x="-46" y="0" width="92" height="26" rx="9" fill="#F8FAFC"/>
+      <rect x="-40" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="24" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="-38" y="7" width="16" height="6" rx="3" fill="#34D399"/>
+      <rect x="22" y="7" width="16" height="6" rx="3" fill="#34D399"/>
+      <rect x="-15" y="9" width="30" height="8" rx="3" fill="#334155"/>
+      <rect x="-10" y="12" width="20" height="2" rx="1" fill="#94A3B8"/>
+    </g>
+    <g transform="translate(425,238) scale(0.96)">
+      <ellipse cx="0" cy="36" rx="54" ry="9" fill="#020617" opacity="0.55"/>
+      <path d="M-38 2 L-28 -20 C-25 -26 -19 -28 -12 -28 L12 -28 C19 -28 25 -26 28 -20 L38 2 Z" fill="#CBD5E1" opacity="0.95"/>
+      <path d="M-26 -2 L-20 -18 C-18 -22 -14 -23 -8 -23 L8 -23 C14 -23 18 -22 20 -18 L26 -2 Z" fill="#0B1220" opacity="0.78"/>
+      <rect x="-46" y="0" width="92" height="26" rx="9" fill="#CBD5E1"/>
+      <rect x="-40" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="24" y="22" width="16" height="12" rx="4" fill="#0B1220"/>
+      <rect x="-38" y="7" width="16" height="6" rx="3" fill="#34D399"/>
+      <rect x="22" y="7" width="16" height="6" rx="3" fill="#34D399"/>
+      <rect x="-15" y="9" width="30" height="8" rx="3" fill="#334155"/>
+      <rect x="-10" y="12" width="20" height="2" rx="1" fill="#94A3B8"/>
+    </g>
+    
+</svg>

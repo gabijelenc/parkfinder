@@ -1,0 +1,78 @@
+{
+  "results": [
+    {
+      "id": "S2B-E01",
+      "description": "Urban Tech brand (parkFinder, tagline, car-in-bay SVG, Inter, 4-tab nav)",
+      "status": "PASS",
+      "actual": "brand=parkFinder, tagline='Tu lugar, antes de llegar.', isotype=SVG, font=Inter, nav=4"
+    },
+    {
+      "id": "S2B-E02",
+      "description": "Light/Dark manual toggle persisted locally + WCAG AA contrast in both modes",
+      "status": "PASS",
+      "actual": "lightCR(body=18.7,cta=9.7), darkCR(body=16.6,cta=9.7), persisted=True"
+    },
+    {
+      "id": "S2B-E03",
+      "description": "Desktop 60% map / 40% list hybrid layout + keyboard-adjustable divider",
+      "status": "PASS",
+      "actual": "defaultSplit=40.0%list/59.3%map, keyResize=40->48->40"
+    },
+    {
+      "id": "S2B-E04",
+      "description": "Progressive search (POI offline, explicit geolocation, recents & favorite destinations)",
+      "status": "PASS",
+      "actual": "poiMatch=Teatro Colón, geoDenied+Granted=OK, persistedRecents=2, favDests=1"
+    },
+    {
+      "id": "S2B-E05",
+      "description": "Commercial cards illustrative SVGs (ES/EN), avg/h price & favorites persistence",
+      "status": "PASS",
+      "actual": "svgImg=assets/garages/obelisco-main.svg, es+enIllustrative=True, favGaragePersisted=garage-puerto-madero"
+    },
+    {
+      "id": "S2B-E06",
+      "description": "Detail side panel (5 tabs, keyboard nav, demo reviews) & expandable Lightbox gallery",
+      "status": "PASS",
+      "actual": "tabs=5(ArrowRight=OK), reviewsDemo=True, lightboxNav+Esc=OK"
+    },
+    {
+      "id": "S2B-E07",
+      "description": "Garage comparator (up to 3, 4th blocked, same interval/vehicle, direct booking)",
+      "status": "PASS",
+      "actual": "selected=3, 4thBlocked=COMPARE_LIMIT_EXCEEDED, directReserveFromCompare=OK"
+    },
+    {
+      "id": "S2B-E08",
+      "description": "Smart recommendations deterministic strip & factual <=2 low availability (no false urgency)",
+      "status": "PASS",
+      "actual": "recPills=4, normalLowAvail=0(noFalseUrgency), sandboxCap1_2LowAvail=1"
+    },
+    {
+      "id": "S2B-E09",
+      "description": "Quick sort pills & Advanced Filters modal synchronized cleanly",
+      "status": "PASS",
+      "actual": "quickSortSynced=precio_asc, advancedFiltersModalSynced=True"
+    },
+    {
+      "id": "S2B-E10",
+      "description": "Mobile 390px full-screen map, top search, accessible sheet, bottom nav, >=44px touch, 0 overflow",
+      "status": "PASS",
+      "actual": "overflow(1440=False,390=False), sheetStates(half/full/peek)=OK, bottomNav=4, touchPx={'mbn': 55, 'handle': 44, 'cta': 44}, jsErrors=0"
+    }
+  ],
+  "screenshots": {
+    "dpr": 2,
+    "tileResponses200": 20,
+    "files": [
+      "after_2b_desktop_light_1440x900.png",
+      "after_2b_desktop_detail_light.png",
+      "after_2b_desktop_dark_1440x900.png",
+      "after_2b_desktop_compare_dark.png",
+      "after_2b_mobile_light_390x844.png",
+      "after_2b_mobile_dark_390x844.png",
+      "after_2b_mobile_map_peek_dark.png"
+    ],
+    "uncaughtErrors": []
+  }
+}
