@@ -563,8 +563,7 @@ EXCEPTION
   WHEN exclusion_violation THEN
     RETURN jsonb_build_object('ok', false, 'code', 'NO_AVAILABILITY');
 END;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.pf_confirm_booking_demo(p_booking_id uuid, p_payment_method text DEFAULT NULL::text)
  RETURNS jsonb
