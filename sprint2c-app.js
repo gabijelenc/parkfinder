@@ -1292,6 +1292,8 @@
     var confirmBtn = host.q('#reserveConfirmBtn', container);
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = ts('checkout.creatingHold'); }
 
+    host.state.holdCreating = true;
+    Array.prototype.forEach.call(container.querySelectorAll('input[name="checkoutPayMethod"]'), function (input) { input.disabled = true; });
     var res = await Sb().createBookingHold({
       facilityId: garage.uuid,
       vehicleId: vehicleId,
@@ -1300,6 +1302,7 @@
       paymentMethod: host.state.checkoutPaymentMethod || 'pay_at_garage',
       idempotencyKey: host.state.checkoutIdempotencyKey
     });
+    host.state.holdCreating = false;
 
     if (!res.ok) {
       host.state.activeHold = null;
@@ -1311,6 +1314,18 @@
       return res;
     }
 
+    var selectedMethod = host.state.checkoutPaymentMethod || 'pay_at_garage';
+    if (res.booking.paymentMethod && res.booking.paymentMethod !== selectedMethod) {
+      var staleHoldCancel = await Sb().cancelBooking(res.booking.id, 'payment_method_changed');
+      if (!staleHoldCancel.ok) {
+        host.state.activeHold = res.booking;
+        renderServerReserveModal(garage, { errorMessage: mapServerError(staleHoldCancel) });
+        return staleHoldCancel;
+      }
+      host.state.activeHold = null;
+      host.state.checkoutIdempotencyKey = Sb().generateUuidV4();
+      return createHoldForCurrentCheckout(garage, vehicleId);
+    }
     host.state.activeHold = res.booking;
     host.toast(ts('checkout.holdCreatedToast', { mins: res.holdMinutes || 10 }), 'ok');
     renderServerReserveModal(garage);
@@ -1523,6 +1538,7 @@
 
     Array.prototype.forEach.call(container.querySelectorAll('input[name="checkoutPayMethod"]'), function (rad) {
       rad.addEventListener('change', async function () {
+        if (host.state.holdCreating) return;
         var previous = host.state.activeHold;
         host.state.checkoutPaymentMethod = rad.value;
         if (previous && previous.paymentMethod !== rad.value) {
@@ -1633,7 +1649,7 @@
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
             '<button type="button" class="btn btn-primary btn-sm" data-view-qr="' + host.escapeHtml(activeItem.id) + '">' + host.escapeHtml(host.t('bookings.viewQr')) + '</button>' +
-            (activeItem.paymentMethod !== 'mercado_pago' && activeItem.paymentMethod !== 'demo_simulated' ? '<button type="button" class="btn btn-secondary btn-sm" data-extend-booking="' + host.escapeHtml(activeItem.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' : '') +
+            (activeItem.paymentMethod !== 'mercado_pago' && activeItem.paymentMethod !== 'demo_simulated' && activeItem.paymentStatus !== 'approved' ? '<button type="button" class="btn btn-secondary btn-sm" data-extend-booking="' + host.escapeHtml(activeItem.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' : '') +
           '</div>' +
         '</div>';
     }
@@ -1696,7 +1712,7 @@
           : (dirUrl ? '<a class="btn btn-ghost btn-sm" href="' + host.escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer">' + host.escapeHtml(host.t('map.directionsShort')) + '</a>' : '') +
             '<button class="btn btn-ghost btn-sm" type="button" data-ics-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.icsBtn')) + '</button>' +
             '<button class="btn btn-ghost btn-sm" type="button" data-share-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.shareBtn')) + '</button>' +
-            (canMutate && !isPending && b.paymentMethod !== 'mercado_pago' && b.paymentMethod !== 'demo_simulated' ? '<button class="btn btn-secondary btn-sm" type="button" data-extend-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' : '') +
+            (canMutate && !isPending && b.paymentMethod !== 'mercado_pago' && b.paymentMethod !== 'demo_simulated' && b.paymentStatus !== 'approved' ? '<button class="btn btn-secondary btn-sm" type="button" data-extend-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(ts('bookings2c.extendBtn')) + '</button>' : '') +
             '<button class="btn btn-secondary btn-sm" type="button" data-view-qr="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(host.t('bookings.viewQr')) + '</button>' +
             (canMutate ? '<button class="btn btn-danger-ghost btn-sm" type="button" data-cancel-booking="' + host.escapeHtml(b.id) + '">' + host.escapeHtml(host.t('bookings.cancel')) + '</button>' : '');
 
