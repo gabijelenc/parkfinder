@@ -1,0 +1,69 @@
+{
+  "results": [
+    {
+      "id": "S2-T01",
+      "description": "Combined amenity/price/rating/distance filters & unknown-vs-no + reset",
+      "status": "PASS",
+      "actual": "states=(Sí/No/Sin informar), combined=garage-puerto-madero, emptyResetRestored=8"
+    },
+    {
+      "id": "S2-T02",
+      "description": "Unavailable/incompatible garages never become bookable through filters",
+      "status": "PASS",
+      "actual": "colegialesIncompatibleWithVan=True, reserveDisabled=True, hiddenByOnlyAvailable=True"
+    },
+    {
+      "id": "S2-T03",
+      "description": "Demo-labelled ratings in ES & EN without Google attribution + rating sort",
+      "status": "PASS",
+      "actual": "sortedDesc=4.8..3.9, es='★\n4.8\n(142 reseñas · demo)', en='★\n4.8\n(142 reviews · demo)'"
+    },
+    {
+      "id": "S2-T04",
+      "description": "Validated Google Maps directions (demo label) + map failure fallback",
+      "status": "PASS",
+      "actual": "hrefValid=True, demoLabel='cómo llegar (ubicación demo)', offlineBooked=PF-2026-3YGV"
+    },
+    {
+      "id": "S2-T05",
+      "description": "Cap 1 overnight 23:00-01:00 overlap/adjacent & cancel release",
+      "status": "PASS",
+      "actual": "overnight=PF-2026-SMP2, blocked0000=NO_AVAILABILITY, adjacent0100=PF-2026-KG4C, rebookedAfterCancel=PF-2026-LB8T"
+    },
+    {
+      "id": "S2-T06",
+      "description": "Non-24h rejects overnight closed span; 24h accepts overnight",
+      "status": "PASS",
+      "actual": "palermo(07-22)=OUT_OF_HOURS, puertoMadero(24h)=eligible"
+    },
+    {
+      "id": "S2-T07",
+      "description": "Fri->Sat proration applies weekend only to Sat + collapsed breakdown + locked quote",
+      "status": "PASS",
+      "actual": "collapsedByDefault=True, segs=4(Fri=1.0/Sat=1.1), locked=ARS 25.200"
+    },
+    {
+      "id": "S2-T08",
+      "description": "Invalid/equal/reversed/>72h intervals rejected with clear ES/EN feedback",
+      "status": "PASS",
+      "actual": "eqES='La salida debe ser posterior a la e...', maxES='La estadía máxima permitida en...', maxEN='Maximum stay allowed in this d...'"
+    },
+    {
+      "id": "S2-T09",
+      "description": "Legacy bookings survive reload & in-app QA suite (S1+S2) passes cleanly",
+      "status": "PASS",
+      "actual": "legacySurvived=PF-2026-LEG1, inAppQaRows=14(0 fails)"
+    },
+    {
+      "id": "S2-T10",
+      "description": "Desktop/mobile visual & responsive layout, separated QA menu, 0 JS errors",
+      "status": "PASS",
+      "actual": "desktopOverflow=False, mobile390Overflow=False, qaSeparated=True, mobileToggle=OK, uncaughtErrors=0"
+    }
+  ],
+  "liveScreenshotInfo": {
+    "liveTilesAttempted": true,
+    "tileResponses200": 12,
+    "uncaughtErrors": []
+  }
+}

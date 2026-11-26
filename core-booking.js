@@ -1,5 +1,7 @@
 /* ==========================================================================
-   ParkFinder Core Booking Engine (Sprint 01: PF-01, PF-02, PF-03, PF-04)
+   ParkFinder Core Booking Engine (Sprint 01 + Sprint 02)
+   PF-01 (incl. overnight/multi-day BA UTC-3), PF-02, PF-03, PF-04,
+   PF-05 (amenities/filters), PF-06 (synthetic demo ratings), PF-14 (directions/map adapter).
    Pure, zero-dependency domain logic shared between browser UI (index.html)
    and automated acceptance tests.
    ========================================================================== */
@@ -18,9 +20,49 @@
   var UTC_OFFSET_MINUTES = -180; // Argentina does not observe DST (UTC-3 fixed)
   var MS_PER_MINUTE = 60000;
   var MS_PER_HOUR = 3600000;
+  var MAX_DURATION_HOURS = 72; // Proposed Sprint 02 demo cap (pending team sign-off)
+  var MAX_DURATION_MINUTES = MAX_DURATION_HOURS * 60;
+
+  var INTERVAL_POLICY = Object.freeze({
+    timezone: TIMEZONE,
+    utcOffset: UTC_OFFSET,
+    maxDurationHours: MAX_DURATION_HOURS,
+    maxDurationMinutes: MAX_DURATION_MINUTES,
+    proposalStatus: 'proposed_demo_default'
+  });
+
+  var AMENITY_KEYS = Object.freeze([
+    'covered',
+    'securityCctv',
+    'evCharging',
+    'accessible',
+    'valet',
+    'open24'
+  ]);
+
+  var MAP_PROVIDERS = Object.freeze({
+    active: 'osm_leaflet',
+    adapters: Object.freeze({
+      osm_leaflet: Object.freeze({
+        id: 'osm_leaflet',
+        label: 'OpenStreetMap + Leaflet',
+        requiresBilling: false,
+        status: 'active',
+        distanceMode: 'straight_line_haversine_estimate'
+      }),
+      google_maps: Object.freeze({
+        id: 'google_maps',
+        label: 'Google Maps Platform',
+        requiresBilling: true,
+        status: 'proposed_not_activated',
+        distanceMode: 'routes_api_pending_approval'
+      })
+    })
+  });
 
   /* Proposed demo defaults per 01_fuentes/reglas_negocio_v01.md (R04).
-     Pending formal team sign-off before production use. */
+     Pending formal team sign-off before production use.
+     Peak windows implemented: 08:00-10:00 and 17:00-20:00 BA local time. */
   var VEHICLE_TYPES = Object.freeze({
     motorcycle: Object.freeze({ id: 'motorcycle', factor: 0.65, defaultHeightM: 1.30 }),
     car: Object.freeze({ id: 'car', factor: 1.00, defaultHeightM: 1.55 }),
@@ -39,6 +81,7 @@
       Object.freeze([8, 10]),
       Object.freeze([17, 20])
     ]),
+    peakWindowsNote: 'Implemented demo peak windows: 08:00-10:00 and 17:00-20:00 BA local time (proposed default; pending team approval).',
     weekendFactor: 1.10,
     weekendDays: Object.freeze([0, 6]), // Sunday (0), Saturday (6)
     occupancyTiers: Object.freeze([
@@ -55,8 +98,9 @@
   });
 
   /* Synthetic garage catalog (Buenos Aires / CABA).
-     Preserves all 8 V1 garages while adding operating hours, accepted vehicle
-     types, max clearance height, and explicit synthetic provenance. */
+     Preserves all 8 V1/S1 garages while adding Sprint 02 tri-state amenities
+     (true = yes, false = no, null = unknown/not reported) and explicitly
+     demo-labelled synthetic ratings (PF-05, PF-06). */
   var DEFAULT_GARAGES = [
     {
       id: 'garage-puerto-madero',
@@ -71,6 +115,19 @@
       operatingHours: { open: '00:00', close: '24:00' },
       acceptedVehicleTypes: ['motorcycle', 'car', 'suv', 'van'],
       maxHeightM: 2.40,
+      amenities: {
+        covered: true,
+        securityCctv: true,
+        evCharging: true,
+        accessible: true,
+        valet: true,
+        open24: true
+      },
+      rating: {
+        score: 4.8,
+        reviewCount: 142,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     },
     {
@@ -86,6 +143,19 @@
       operatingHours: { open: '07:00', close: '22:00' },
       acceptedVehicleTypes: ['motorcycle', 'car', 'suv'],
       maxHeightM: 2.00,
+      amenities: {
+        covered: true,
+        securityCctv: true,
+        evCharging: true,
+        accessible: null,
+        valet: false,
+        open24: false
+      },
+      rating: {
+        score: 4.6,
+        reviewCount: 98,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     },
     {
@@ -101,6 +171,19 @@
       operatingHours: { open: '00:00', close: '24:00' },
       acceptedVehicleTypes: ['car', 'suv', 'van'],
       maxHeightM: 2.60,
+      amenities: {
+        covered: false,
+        securityCctv: true,
+        evCharging: false,
+        accessible: true,
+        valet: false,
+        open24: true
+      },
+      rating: {
+        score: 4.4,
+        reviewCount: 215,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     },
     {
@@ -116,6 +199,19 @@
       operatingHours: { open: '00:00', close: '24:00' },
       acceptedVehicleTypes: ['car', 'suv'],
       maxHeightM: 1.95,
+      amenities: {
+        covered: true,
+        securityCctv: true,
+        evCharging: false,
+        accessible: true,
+        valet: true,
+        open24: true
+      },
+      rating: {
+        score: 4.7,
+        reviewCount: 118,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     },
     {
@@ -131,6 +227,19 @@
       operatingHours: { open: '00:00', close: '24:00' },
       acceptedVehicleTypes: ['motorcycle', 'car', 'suv', 'van'],
       maxHeightM: 3.00,
+      amenities: {
+        covered: false,
+        securityCctv: true,
+        evCharging: null,
+        accessible: true,
+        valet: false,
+        open24: true
+      },
+      rating: {
+        score: 4.3,
+        reviewCount: 76,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     },
     {
@@ -146,6 +255,19 @@
       operatingHours: { open: '00:00', close: '24:00' },
       acceptedVehicleTypes: ['motorcycle', 'car', 'suv'],
       maxHeightM: 2.10,
+      amenities: {
+        covered: false,
+        securityCctv: null,
+        evCharging: false,
+        accessible: false,
+        valet: false,
+        open24: true
+      },
+      rating: {
+        score: 4.1,
+        reviewCount: 54,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     },
     {
@@ -161,6 +283,19 @@
       operatingHours: { open: '07:00', close: '21:00' },
       acceptedVehicleTypes: ['motorcycle', 'car'],
       maxHeightM: 1.80,
+      amenities: {
+        covered: true,
+        securityCctv: true,
+        evCharging: false,
+        accessible: null,
+        valet: false,
+        open24: false
+      },
+      rating: {
+        score: 4.5,
+        reviewCount: 63,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     },
     {
@@ -176,6 +311,19 @@
       operatingHours: { open: '00:00', close: '24:00' },
       acceptedVehicleTypes: ['motorcycle', 'car', 'suv', 'van'],
       maxHeightM: 2.80,
+      amenities: {
+        covered: false,
+        securityCctv: false,
+        evCharging: false,
+        accessible: false,
+        valet: null,
+        open24: true
+      },
+      rating: {
+        score: 3.9,
+        reviewCount: 41,
+        provenance: 'synthetic_demo'
+      },
       dataProvenance: 'synthetic_demo'
     }
   ];
@@ -269,17 +417,65 @@
     return local.dateStr + 'T' + local.timeStr + ':00' + UTC_OFFSET;
   }
 
-  /* ------------------------- Interval Validation (PF-01) ------------------------- */
+  function addDaysToDateStr(dateStr, deltaDays) {
+    var parts = parseDateParts(dateStr);
+    if (!parts) return null;
+    var dt = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + (deltaDays || 0)));
+    return dt.getUTCFullYear() + '-' + pad2(dt.getUTCMonth() + 1) + '-' + pad2(dt.getUTCDate());
+  }
+
+  /* Enumerates every Buenos Aires local calendar day touched by half-open [startMs, endMs),
+     returning clipped [startMinutes, endMinutes) within [0, 1440] for each day. */
+  function enumerateLocalDatesBetween(startMs, endMs) {
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return [];
+    var days = [];
+    var cursor = startMs;
+    var safety = 0;
+    while (cursor < endMs && safety < 32) {
+      safety++;
+      var local = getBuenosAiresLocalParts(cursor);
+      var dayStartMin = local.hour * 60 + local.minute;
+      var nextMidnightMs = toBuenosAiresEpochMs(local.dateStr, 1440);
+      var sliceEnd = Math.min(endMs, nextMidnightMs);
+      var dayEndMin = sliceEnd >= nextMidnightMs
+        ? 1440
+        : (getBuenosAiresLocalParts(sliceEnd).hour * 60 + getBuenosAiresLocalParts(sliceEnd).minute);
+      if (dayEndMin > dayStartMin) {
+        days.push({
+          dateStr: local.dateStr,
+          dayOfWeek: local.dayOfWeek,
+          startMinutes: dayStartMin,
+          endMinutes: dayEndMin
+        });
+      }
+      cursor = sliceEnd;
+    }
+    return days;
+  }
+
+  /* ------------------------- Interval Validation (PF-01 + Sprint 02 Multi-Day) ------------------------- */
 
   function validateInterval(params) {
     var input = params || {};
-    var date = typeof input.date === 'string' ? input.date.trim() : '';
+    var arrivalDateRaw = typeof input.arrivalDate === 'string' && input.arrivalDate.trim() !== ''
+      ? input.arrivalDate.trim()
+      : (typeof input.date === 'string' ? input.date.trim() : '');
+    var hasExplicitDepDate = typeof input.departureDate === 'string' && input.departureDate.trim() !== '';
+    var departureDateRaw = hasExplicitDepDate ? input.departureDate.trim() : arrivalDateRaw;
     var arrival = typeof input.arrival === 'string' ? input.arrival.trim() : '';
     var departure = typeof input.departure === 'string' ? input.departure.trim() : '';
+    var maxDurationMinutes = Number.isFinite(Number(input.maxDurationMinutes)) && Number(input.maxDurationMinutes) > 0
+      ? Math.round(Number(input.maxDurationMinutes))
+      : MAX_DURATION_MINUTES;
 
-    var dateParts = parseDateParts(date);
-    if (!dateParts) {
+    var arrivalDateParts = parseDateParts(arrivalDateRaw);
+    if (!arrivalDateParts) {
       return { valid: false, code: 'INVALID_DATE' };
+    }
+
+    var departureDateParts = parseDateParts(departureDateRaw);
+    if (!departureDateParts) {
+      return { valid: false, code: 'INVALID_DEPARTURE_DATE' };
     }
 
     var startMinutes = parseTimeMinutes(arrival, false);
@@ -287,57 +483,91 @@
       return { valid: false, code: 'INVALID_ARRIVAL_TIME' };
     }
 
+    var startMs = toBuenosAiresEpochMs(arrivalDateRaw, startMinutes);
+    var endMs = NaN;
     var endMinutes = null;
+    var isLegacy2400 = false;
+
     if (departure) {
-      endMinutes = parseTimeMinutes(departure, true);
+      var allow2400 = departureDateRaw === arrivalDateRaw;
+      endMinutes = parseTimeMinutes(departure, allow2400);
       if (endMinutes === null) {
         return { valid: false, code: 'INVALID_DEPARTURE_TIME' };
       }
+      isLegacy2400 = allow2400 && endMinutes === 1440;
+      endMs = toBuenosAiresEpochMs(departureDateRaw, endMinutes);
     } else if (input.hours !== undefined && input.hours !== null && input.hours !== '') {
       var hoursNum = Number(input.hours);
       if (!Number.isFinite(hoursNum) || hoursNum <= 0) {
         return { valid: false, code: 'NON_POSITIVE_DURATION' };
       }
-      endMinutes = Math.round(startMinutes + hoursNum * 60);
-      if (endMinutes > 1440) {
-        return { valid: false, code: 'EXCEEDS_SAME_DAY' };
+      var durMinsFromHours = Math.round(hoursNum * 60);
+      if (durMinsFromHours > maxDurationMinutes) {
+        return { valid: false, code: 'EXCEEDS_MAX_DURATION', maxDurationHours: maxDurationMinutes / 60 };
+      }
+      endMs = startMs + durMinsFromHours * MS_PER_MINUTE;
+      var computedEndLocal = getBuenosAiresLocalParts(endMs);
+      if (computedEndLocal.dateStr !== arrivalDateRaw && computedEndLocal.timeStr === '00:00' && durMinsFromHours <= 1440 && startMinutes + durMinsFromHours === 1440) {
+        isLegacy2400 = true;
+        departureDateRaw = arrivalDateRaw;
+        endMinutes = 1440;
+      } else {
+        departureDateRaw = computedEndLocal.dateStr;
+        endMinutes = computedEndLocal.hour * 60 + computedEndLocal.minute;
       }
     } else {
       return { valid: false, code: 'INVALID_DEPARTURE_TIME' };
     }
 
-    var durationMinutes = endMinutes - startMinutes;
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+      return { valid: false, code: 'INVALID_INTERVAL' };
+    }
+
+    var durationMinutes = Math.round((endMs - startMs) / MS_PER_MINUTE);
     if (durationMinutes <= 0) {
       return { valid: false, code: 'NON_POSITIVE_DURATION' };
     }
 
-    var startMs = toBuenosAiresEpochMs(date, startMinutes);
-    var endMs = toBuenosAiresEpochMs(date, endMinutes);
-    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
-      return { valid: false, code: 'INVALID_INTERVAL' };
+    if (durationMinutes > maxDurationMinutes) {
+      return {
+        valid: false,
+        code: 'EXCEEDS_MAX_DURATION',
+        maxDurationHours: maxDurationMinutes / 60,
+        durationMinutes: durationMinutes
+      };
     }
 
     if (input.allowPast === false) {
       var todayBa = getTodayInBuenosAires(input.referenceNow);
-      if (date < todayBa) {
+      if (arrivalDateRaw < todayBa) {
         return { valid: false, code: 'PAST_DATE' };
       }
     }
 
+    var endLocal = getBuenosAiresLocalParts(endMs);
+    var canonicalDepartureDate = isLegacy2400 ? arrivalDateRaw : endLocal.dateStr;
+    var canonicalDeparture = isLegacy2400 ? '24:00' : endLocal.timeStr;
+    var canonicalEndMinutes = isLegacy2400 ? 1440 : (endLocal.hour * 60 + endLocal.minute);
+    var daySlices = enumerateLocalDatesBetween(startMs, endMs);
+
     return {
       valid: true,
       code: 'OK',
-      date: date,
+      date: arrivalDateRaw,
+      arrivalDate: arrivalDateRaw,
+      departureDate: canonicalDepartureDate,
       arrival: formatMinutesToHHMM(startMinutes),
-      departure: formatMinutesToHHMM(endMinutes),
+      departure: canonicalDeparture,
+      isOvernight: canonicalDepartureDate !== arrivalDateRaw,
+      spansDays: daySlices.length,
       startMinutes: startMinutes,
-      endMinutes: endMinutes,
+      endMinutes: canonicalEndMinutes,
       durationMinutes: durationMinutes,
       durationHours: durationMinutes / 60,
       startMs: startMs,
       endMs: endMs,
-      startAt: toBuenosAiresIso(date, startMinutes),
-      endAt: toBuenosAiresIso(date, endMinutes),
+      startAt: toBuenosAiresIso(arrivalDateRaw, startMinutes),
+      endAt: endLocal.dateStr + 'T' + endLocal.timeStr + ':00' + UTC_OFFSET,
       timezone: TIMEZONE
     };
   }
@@ -354,6 +584,9 @@
     var closeMinutes = parseTimeMinutes(hours.close, true);
     if (openMinutes === null) openMinutes = 420;
     if (closeMinutes === null) closeMinutes = 1320;
+    if (openMinutes === 0 && closeMinutes === 1440) {
+      return { openMinutes: 0, closeMinutes: 1440, open: '00:00', close: '24:00', open24: true };
+    }
     return {
       openMinutes: openMinutes,
       closeMinutes: closeMinutes,
@@ -363,18 +596,62 @@
     };
   }
 
+  /* Validates garage operating hours across EVERY local Buenos Aires day touched by
+     [interval.startMs, interval.endMs), including overnight spans and closed periods. */
   function isWithinOperatingHours(garage, interval) {
     if (!garage || !interval || !interval.valid) {
-      return { compatible: false, code: 'INVALID_INTERVAL' };
+      return { compatible: false, code: 'INVALID_INTERVAL', spansClosedPeriod: false };
     }
     var op = getGarageOperatingMinutes(garage);
-    if (op.open24) {
-      return { compatible: true, code: 'OK', open: op.open, close: op.close };
+    var closedDays = Array.isArray(garage.closedDays) ? garage.closedDays : [];
+    if (op.open24 && closedDays.length === 0) {
+      return { compatible: true, code: 'OK', spansClosedPeriod: false, open: op.open, close: op.close };
     }
-    var ok = interval.startMinutes >= op.openMinutes && interval.endMinutes <= op.closeMinutes;
+
+    var slices = enumerateLocalDatesBetween(interval.startMs, interval.endMs);
+    for (var i = 0; i < slices.length; i++) {
+      var slice = slices[i];
+      if (closedDays.indexOf(slice.dayOfWeek) !== -1) {
+        return {
+          compatible: false,
+          code: 'OUT_OF_HOURS',
+          spansClosedPeriod: true,
+          closedDate: slice.dateStr,
+          open: op.open,
+          close: op.close
+        };
+      }
+      if (!op.open24) {
+        if (op.openMinutes < op.closeMinutes) {
+          // Standard daytime window [openMinutes, closeMinutes)
+          if (slice.startMinutes < op.openMinutes || slice.endMinutes > op.closeMinutes) {
+            return {
+              compatible: false,
+              code: 'OUT_OF_HOURS',
+              spansClosedPeriod: true,
+              open: op.open,
+              close: op.close
+            };
+          }
+        } else if (op.openMinutes > op.closeMinutes) {
+          // Overnight operating window: closed during [closeMinutes, openMinutes)
+          if (slice.startMinutes < op.openMinutes && slice.endMinutes > op.closeMinutes) {
+            return {
+              compatible: false,
+              code: 'OUT_OF_HOURS',
+              spansClosedPeriod: true,
+              open: op.open,
+              close: op.close
+            };
+          }
+        }
+      }
+    }
+
     return {
-      compatible: ok,
-      code: ok ? 'OK' : 'OUT_OF_HOURS',
+      compatible: true,
+      code: 'OK',
+      spansClosedPeriod: false,
       open: op.open,
       close: op.close
     };
@@ -447,15 +724,17 @@
       endMs = Date.parse(raw.endAt);
     }
 
-    var date = raw.date;
+    var date = raw.arrivalDate || raw.date;
+    var departureDate = raw.departureDate;
     var arrival = raw.arrival;
     var departure = raw.departure;
     var durationMinutes = Number(raw.durationMinutes);
 
     if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
-      // Backwards compatibility with V1 bookings: { date, arrival, hours }
+      // Backwards compatibility with V1/Sprint 1 bookings: { date, arrival, hours }
       var derived = validateInterval({
         date: date,
+        departureDate: departureDate,
         arrival: arrival,
         departure: departure,
         hours: raw.hours,
@@ -465,6 +744,7 @@
         startMs = derived.startMs;
         endMs = derived.endMs;
         date = derived.date;
+        departureDate = derived.departureDate;
         arrival = derived.arrival;
         departure = derived.departure;
         durationMinutes = derived.durationMinutes;
@@ -473,14 +753,21 @@
       if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
         durationMinutes = Math.round((endMs - startMs) / MS_PER_MINUTE);
       }
+      var sp = getBuenosAiresLocalParts(startMs);
+      var ep = getBuenosAiresLocalParts(endMs);
       if (!date || !arrival) {
-        var sp = getBuenosAiresLocalParts(startMs);
         date = date || sp.dateStr;
         arrival = arrival || sp.timeStr;
       }
+      if (!departureDate) {
+        departureDate = ep.dateStr !== date && ep.timeStr === '00:00' && departure === '24:00'
+          ? date
+          : ep.dateStr;
+      }
       if (!departure) {
-        var ep = getBuenosAiresLocalParts(endMs);
-        departure = ep.dateStr !== date && ep.timeStr === '00:00' ? '24:00' : ep.timeStr;
+        departure = ep.dateStr !== date && ep.timeStr === '00:00' && durationMinutes <= 1440
+          ? '24:00'
+          : ep.timeStr;
       }
     }
 
@@ -496,10 +783,16 @@
       ? Number(raw.quote.totalArs)
       : (Number(raw.cost) || 0);
 
+    var finalDate = date || '';
+    var finalDepDate = departureDate || finalDate;
+
     return Object.assign({}, raw, {
       status: normalizedStatus,
       vehicleType: VEHICLE_TYPES[raw.vehicleType] ? raw.vehicleType : 'car',
-      date: date || '',
+      date: finalDate,
+      arrivalDate: finalDate,
+      departureDate: finalDepDate,
+      isOvernight: !!(finalDate && finalDepDate && finalDepDate !== finalDate),
       arrival: arrival || '10:00',
       departure: departure || formatMinutesToHHMM((parseTimeMinutes(arrival || '10:00', false) || 600) + Math.round(hours * 60)),
       durationMinutes: Number.isFinite(durationMinutes) && durationMinutes > 0 ? durationMinutes : Math.round(hours * 60),
@@ -670,6 +963,8 @@
       totalExact += subtotalExact;
 
       return {
+        date: seg.date,
+        dayOfWeek: seg.dayOfWeek,
         start: seg.start,
         end: seg.end,
         durationMinutes: seg.durationMinutes,
@@ -757,6 +1052,161 @@
       availability: availability,
       quote: quote
     };
+  }
+
+  /* ------------------------- Amenities, Filters & Ratings (PF-05, PF-06) ------------------------- */
+
+  /* Strictly separates true ('yes'), false ('no'), and null/undefined ('unknown'). */
+  function getAmenityState(garage, amenityKey) {
+    if (!garage) return 'unknown';
+    var amenities = garage.amenities;
+    if (amenities && Object.prototype.hasOwnProperty.call(amenities, amenityKey)) {
+      if (amenities[amenityKey] === true) return 'yes';
+      if (amenities[amenityKey] === false) return 'no';
+      return 'unknown';
+    }
+    // Fallback to legacy boolean properties only for covered/open24 when amenities map omitted
+    if (amenityKey === 'covered' && typeof garage.techado === 'boolean') {
+      return garage.techado ? 'yes' : 'no';
+    }
+    if (amenityKey === 'open24' && typeof garage.open24 === 'boolean') {
+      return garage.open24 ? 'yes' : 'no';
+    }
+    return 'unknown';
+  }
+
+  function getGarageRating(garage) {
+    if (!garage || !garage.rating || !Number.isFinite(Number(garage.rating.score))) {
+      return {
+        score: null,
+        reviewCount: 0,
+        provenance: 'synthetic_demo',
+        isDemo: true
+      };
+    }
+    var score = Math.max(1, Math.min(5, Number(garage.rating.score)));
+    var count = Math.max(0, Math.floor(Number(garage.rating.reviewCount) || 0));
+    return {
+      score: Math.round(score * 10) / 10,
+      reviewCount: count,
+      provenance: garage.rating.provenance || 'synthetic_demo',
+      isDemo: true
+    };
+  }
+
+  /* Evaluates combined display filters without EVER altering garage eligibility (S2-T01, S2-T02).
+     Filtering by an amenity requires state === 'yes' (both 'no' and 'unknown' are excluded). */
+  function matchesFilters(garage, evalRes, filters, distanceKm) {
+    var f = filters || {};
+    if (f.onlyEligible && (!evalRes || !evalRes.eligible)) {
+      return false;
+    }
+
+    var reqAmenities = [];
+    if (Array.isArray(f.amenities)) {
+      reqAmenities = f.amenities;
+    } else if (f.amenities && typeof f.amenities === 'object') {
+      reqAmenities = Object.keys(f.amenities).filter(function (k) { return !!f.amenities[k]; });
+    }
+
+    for (var i = 0; i < reqAmenities.length; i++) {
+      if (getAmenityState(garage, reqAmenities[i]) !== 'yes') {
+        return false;
+      }
+    }
+
+    if (f.maxPriceArs !== null && f.maxPriceArs !== undefined && f.maxPriceArs !== '') {
+      var maxPrice = Number(f.maxPriceArs);
+      if (Number.isFinite(maxPrice) && maxPrice > 0) {
+        var total = evalRes && evalRes.quote ? evalRes.quote.totalArs : Number(garage.ratePerHour);
+        if (!Number.isFinite(total) || total > maxPrice) return false;
+      }
+    }
+
+    if (f.minRating !== null && f.minRating !== undefined && f.minRating !== '') {
+      var minRating = Number(f.minRating);
+      if (Number.isFinite(minRating) && minRating > 0) {
+        var rating = getGarageRating(garage);
+        if (rating.score === null || rating.score < minRating - 1e-9) return false;
+      }
+    }
+
+    if (f.maxDistanceKm !== null && f.maxDistanceKm !== undefined && f.maxDistanceKm !== '') {
+      var maxDist = Number(f.maxDistanceKm);
+      if (Number.isFinite(maxDist) && maxDist > 0 && Number.isFinite(distanceKm)) {
+        if (distanceKm > maxDist + 1e-9) return false;
+      }
+    }
+
+    return true;
+  }
+
+  function filterGarages(garages, evaluations, filters, distanceFn) {
+    var list = Array.isArray(garages) ? garages : [];
+    var evalMap = evaluations || {};
+    return list.filter(function (g) {
+      var km = typeof distanceFn === 'function' ? distanceFn(g) : null;
+      return matchesFilters(g, evalMap[g.id], filters, km);
+    });
+  }
+
+  function sortGarages(garages, evaluations, sortMode, distanceFn) {
+    var list = Array.isArray(garages) ? garages.slice() : [];
+    var evalMap = evaluations || {};
+    var distOf = typeof distanceFn === 'function' ? distanceFn : function () { return 0; };
+
+    return list.sort(function (a, b) {
+      var ea = evalMap[a.id];
+      var eb = evalMap[b.id];
+      var qa = ea && ea.quote ? ea.quote.totalArs : Number(a.ratePerHour) || 0;
+      var qb = eb && eb.quote ? eb.quote.totalArs : Number(b.ratePerHour) || 0;
+
+      if (sortMode === 'precio_asc') {
+        var diffAsc = qa - qb;
+        return diffAsc !== 0 ? diffAsc : distOf(a) - distOf(b);
+      }
+      if (sortMode === 'precio_desc') {
+        var diffDesc = qb - qa;
+        return diffDesc !== 0 ? diffDesc : distOf(a) - distOf(b);
+      }
+      if (sortMode === 'rating_desc') {
+        var ra = getGarageRating(a);
+        var rb = getGarageRating(b);
+        var sa = ra.score !== null ? ra.score : -1;
+        var sb = rb.score !== null ? rb.score : -1;
+        if (Math.abs(sb - sa) > 1e-9) return sb - sa;
+        if (rb.reviewCount !== ra.reviewCount) return rb.reviewCount - ra.reviewCount;
+        return distOf(a) - distOf(b);
+      }
+
+      var dist = distOf(a) - distOf(b);
+      if (Math.abs(dist) > 1e-9) return dist;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+  }
+
+  /* ------------------------- Validated External Directions (PF-14) ------------------------- */
+
+  function isValidCoordinates(lat, lng) {
+    if (typeof lat !== 'number' || typeof lng !== 'number') return false;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return false;
+    if (lat === 0 && lng === 0) return false;
+    return true;
+  }
+
+  /* Builds keyless Google Maps external directions URL only for validated coordinates.
+     UI MUST label this explicitly as navigation to a synthetic/demo location. */
+  function buildExternalDirectionsUrl(garage) {
+    if (!garage || !isValidCoordinates(garage.lat, garage.lng)) {
+      return null;
+    }
+    var dest = garage.lat.toFixed(6).replace(/0+$/, '').replace(/\.$/, '') +
+      ',' +
+      garage.lng.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+    return 'https://www.google.com/maps/dir/?api=1&destination=' +
+      encodeURIComponent(dest) +
+      '&travelmode=driving';
   }
 
   /* ------------------------- Durable Local Storage Adapter (PF-02, T08) ------------------------- */
@@ -889,9 +1339,12 @@
         ? opts.interval
         : validateInterval({
             date: opts.date,
+            arrivalDate: opts.arrivalDate,
+            departureDate: opts.departureDate,
             arrival: opts.arrival,
             departure: opts.departure,
             hours: opts.hours,
+            maxDurationMinutes: opts.maxDurationMinutes,
             allowPast: opts.allowPast,
             referenceNow: opts.referenceNow
           });
@@ -938,10 +1391,15 @@
         garageId: garage.id,
         garage: garage.name,
         address: garage.address,
+        lat: garage.lat,
+        lng: garage.lng,
         plate: plate,
         vehicleType: vehicleCheck.vehicleType,
         vehicleHeightM: vehicleCheck.vehicleHeightM,
         date: interval.date,
+        arrivalDate: interval.arrivalDate || interval.date,
+        departureDate: interval.departureDate || interval.date,
+        isOvernight: !!interval.isOvernight,
         arrival: interval.arrival,
         departure: interval.departure,
         durationMinutes: interval.durationMinutes,
@@ -1220,15 +1678,122 @@
     return results;
   }
 
+  /* ------------------------- Sprint 02 Isolated QA Scenarios (S2-T01..S2-T08) ------------------------- */
+
+  function runSprint02AcceptanceScenarios() {
+    var results = [];
+    var tue = '2026-12-15';
+    var wed = '2026-12-16';
+    var fri = '2026-12-18'; // Friday in BA
+    var sat = '2026-12-19'; // Saturday in BA
+
+    // S2-T01: combined amenity/price/rating/distance filters + unknown excluded
+    (function () {
+      var interval = validateInterval({ date: tue, arrival: '10:00', departure: '12:00', allowPast: true });
+      var evals = {};
+      DEFAULT_GARAGES.forEach(function (g) { evals[g.id] = evaluateGarageEligibility(g, interval, 'car', []); });
+      var filtered = filterGarages(DEFAULT_GARAGES, evals, {
+        amenities: ['covered', 'evCharging'],
+        minRating: 4.5,
+        maxPriceArs: 15000
+      }, function () { return 0.5; });
+      var unknownExcluded = getAmenityState(DEFAULT_GARAGES[1], 'accessible') === 'unknown' &&
+        filterGarages([DEFAULT_GARAGES[1]], evals, { amenities: ['accessible'] }).length === 0;
+      var pass = filtered.length === 2 && unknownExcluded;
+      results.push({
+        id: 'S2-T01',
+        status: pass ? 'PASS' : 'FAIL',
+        actual: 'matched=' + filtered.map(function (g) { return g.id; }).join(',') + ', unknownExcluded=' + unknownExcluded
+      });
+    })();
+
+    // S2-T05: cap 1 overnight 23:00-01:00 blocks 00:00-00:30, allows 01:00-02:00, cancel releases
+    (function () {
+      var g24 = {
+        id: 'qa-s2-cap1-24h', name: 'QA 24h Cap1', address: 'Test 24h',
+        ratePerHour: 6000, totalSpaces: 1, open24: true,
+        operatingHours: { open: '00:00', close: '24:00' },
+        acceptedVehicleTypes: ['car'], maxHeightM: 2.2
+      };
+      var store = createStorageAdapter(createMemoryStorage(), 'qa.s2t05');
+      var r1 = createBooking({ garage: g24, arrivalDate: tue, departureDate: wed, arrival: '23:00', departure: '01:00', vehicleType: 'car', storageAdapter: store, allowPast: true });
+      var rBlocked = createBooking({ garage: g24, arrivalDate: wed, departureDate: wed, arrival: '00:00', departure: '00:30', vehicleType: 'car', storageAdapter: store, allowPast: true });
+      var rAdj = createBooking({ garage: g24, arrivalDate: wed, departureDate: wed, arrival: '01:00', departure: '02:00', vehicleType: 'car', storageAdapter: store, allowPast: true });
+      var c1 = cancelBookingById(r1.booking.id, store, 'qa_s2');
+      var rAfter = createBooking({ garage: g24, arrivalDate: wed, departureDate: wed, arrival: '00:00', departure: '00:30', vehicleType: 'car', storageAdapter: store, allowPast: true });
+      var pass = r1.ok && !rBlocked.ok && rBlocked.code === 'NO_AVAILABILITY' && rAdj.ok && c1.ok && rAfter.ok;
+      results.push({
+        id: 'S2-T05',
+        status: pass ? 'PASS' : 'FAIL',
+        actual: 'overnight=' + r1.code + ', overlap=' + rBlocked.code + ', adjacent=' + rAdj.code + ', afterCancel=' + rAfter.code
+      });
+    })();
+
+    // S2-T06: non-24h rejects overnight closed span; 24h accepts
+    (function () {
+      var non24 = DEFAULT_GARAGES[1]; // Palermo Soho 07:00-22:00
+      var g24 = DEFAULT_GARAGES[0];   // Puerto Madero 24h
+      var ov = validateInterval({ arrivalDate: tue, departureDate: wed, arrival: '21:00', departure: '08:00', allowPast: true });
+      var hNon24 = isWithinOperatingHours(non24, ov);
+      var h24 = isWithinOperatingHours(g24, ov);
+      var pass = !hNon24.compatible && hNon24.code === 'OUT_OF_HOURS' && h24.compatible;
+      results.push({
+        id: 'S2-T06',
+        status: pass ? 'PASS' : 'FAIL',
+        actual: 'non24=' + hNon24.code + ', open24=' + h24.code
+      });
+    })();
+
+    // S2-T07: Friday-to-Saturday applies weekend multiplier only to Saturday segments
+    (function () {
+      var g24 = Object.assign({}, DEFAULT_GARAGES[0], { ratePerHour: 1000 });
+      var friSat = validateInterval({ arrivalDate: fri, departureDate: sat, arrival: '22:00', departure: '02:00', allowPast: true });
+      var q = calculateDynamicQuote(g24, friSat, 'car', []);
+      // Fri 22-23 (1.0), Fri 23-24 (1.0), Sat 00-01 (1.1), Sat 01-02 (1.1) -> 1000+1000+1100+1100 = 4200
+      var pass = q.segments.length === 4 &&
+        q.segments[0].weekendFactor === 1.00 && q.segments[1].weekendFactor === 1.00 &&
+        q.segments[2].weekendFactor === 1.10 && q.segments[3].weekendFactor === 1.10 &&
+        q.totalArs === 4200;
+      results.push({
+        id: 'S2-T07',
+        status: pass ? 'PASS' : 'FAIL',
+        actual: 'segs=' + q.segments.length + ', friWknd=' + q.segments[0].weekendFactor + ', satWknd=' + q.segments[2].weekendFactor + ', total=' + q.totalArs
+      });
+    })();
+
+    // S2-T08: invalid dates, equal/reversed, >72h rejected
+    (function () {
+      var badDep = validateInterval({ arrivalDate: tue, departureDate: '2026-02-30', arrival: '10:00', departure: '12:00', allowPast: true });
+      var rev = validateInterval({ arrivalDate: wed, departureDate: tue, arrival: '10:00', departure: '12:00', allowPast: true });
+      var eq = validateInterval({ arrivalDate: tue, departureDate: tue, arrival: '10:00', departure: '10:00', allowPast: true });
+      var tooLong = validateInterval({ arrivalDate: tue, departureDate: '2026-12-19', arrival: '10:00', departure: '11:00', allowPast: true });
+      var pass = !badDep.valid && !rev.valid && !eq.valid && !tooLong.valid && tooLong.code === 'EXCEEDS_MAX_DURATION';
+      results.push({
+        id: 'S2-T08',
+        status: pass ? 'PASS' : 'FAIL',
+        actual: [badDep.code, rev.code, eq.code, tooLong.code].join(', ')
+      });
+    })();
+
+    return results;
+  }
+
   return {
     TIMEZONE: TIMEZONE,
     UTC_OFFSET: UTC_OFFSET,
+    MAX_DURATION_HOURS: MAX_DURATION_HOURS,
+    MAX_DURATION_MINUTES: MAX_DURATION_MINUTES,
+    INTERVAL_POLICY: INTERVAL_POLICY,
+    AMENITY_KEYS: AMENITY_KEYS,
+    MAP_PROVIDERS: MAP_PROVIDERS,
     VEHICLE_TYPES: VEHICLE_TYPES,
     VEHICLE_TYPE_LIST: VEHICLE_TYPE_LIST,
     PRICING_POLICY: PRICING_POLICY,
     DEFAULT_GARAGES: DEFAULT_GARAGES,
     getBuenosAiresLocalParts: getBuenosAiresLocalParts,
     getTodayInBuenosAires: getTodayInBuenosAires,
+    addDaysToDateStr: addDaysToDateStr,
+    enumerateLocalDatesBetween: enumerateLocalDatesBetween,
     parseDateParts: parseDateParts,
     parseTimeMinutes: parseTimeMinutes,
     formatMinutesToHHMM: formatMinutesToHHMM,
@@ -1248,12 +1813,20 @@
     calculateDynamicQuote: calculateDynamicQuote,
     cloneQuoteSnapshot: cloneQuoteSnapshot,
     evaluateGarageEligibility: evaluateGarageEligibility,
+    getAmenityState: getAmenityState,
+    getGarageRating: getGarageRating,
+    matchesFilters: matchesFilters,
+    filterGarages: filterGarages,
+    sortGarages: sortGarages,
+    isValidCoordinates: isValidCoordinates,
+    buildExternalDirectionsUrl: buildExternalDirectionsUrl,
     createStorageAdapter: createStorageAdapter,
     createMemoryStorage: createMemoryStorage,
     createSubmissionGuard: createSubmissionGuard,
     defaultGenerateBookingId: defaultGenerateBookingId,
     createBooking: createBooking,
     cancelBookingById: cancelBookingById,
-    runCoreAcceptanceScenarios: runCoreAcceptanceScenarios
+    runCoreAcceptanceScenarios: runCoreAcceptanceScenarios,
+    runSprint02AcceptanceScenarios: runSprint02AcceptanceScenarios
   };
 }));
