@@ -1,38 +1,87 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="ParkFinder — buscá, compará y reservá estacionamientos privados en Buenos Aires con disponibilidad por intervalo, filtros de servicios y precios transparentes." />
-<title>ParkFinder · Estacionamientos privados en Buenos Aires</title>
+<meta name="description" content="parkFinder — Tu lugar, antes de llegar. Buscá, compará y reservá estacionamientos privados en Buenos Aires con disponibilidad por intervalo, filtros avanzados y precios transparentes." />
+<title>parkFinder · Tu lugar, antes de llegar.</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="styles.css" />
+<script>
+(function () {
+  try {
+    var saved = localStorage.getItem('parkfinder.v2.theme');
+    if (saved === 'dark' || saved === 'light') {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  } catch (e) {}
+})();
+</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="core-booking.js"></script>
 </head>
 <body>
 <header class="topbar">
-  <div class="wrap topbar-inner">
-    <a class="brand" href="#top" id="brandHome" aria-label="ParkFinder">
-      <div class="brand-mark" aria-hidden="true">P</div>
+  <div class="topbar-inner">
+    <a class="brand" href="#top" id="brandHome" aria-label="parkFinder — Tu lugar, antes de llegar.">
+      <div class="brand-mark" aria-hidden="true">
+        <!-- Original parkFinder Isotype: Front-facing vehicle inside a parking bay -->
+        <svg id="brandIsotype" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Isotipo parkFinder">
+          <!-- Parking Bay Frame -->
+          <path d="M5 29V10C5 7.23858 7.23858 5 10 5H26C28.7614 5 31 7.23858 31 10V29" stroke="#34D399" stroke-width="2.4" stroke-linecap="round"/>
+          <!-- Bay Floor Guide -->
+          <path d="M8.5 29H27.5" stroke="#334155" stroke-width="1.6" stroke-linecap="round"/>
+          <!-- Front-Facing Vehicle Silhouette -->
+          <path d="M11.5 18.5L13.3 13.6C13.75 12.4 14.9 11.6 16.18 11.6H19.82C21.1 11.6 22.25 12.4 22.7 13.6L24.5 18.5" stroke="#F8FAFC" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="9.8" y="18.2" width="16.4" height="6.8" rx="2.6" fill="#F8FAFC"/>
+          <rect x="11.6" y="20.4" width="3.2" height="2" rx="1" fill="#34D399"/>
+          <rect x="21.2" y="20.4" width="3.2" height="2" rx="1" fill="#34D399"/>
+          <rect x="16" y="20.8" width="4" height="1.4" rx="0.7" fill="#0B1220"/>
+          <rect x="11.2" y="24.8" width="2.8" height="2.4" rx="1" fill="#94A3B8"/>
+          <rect x="22" y="24.8" width="2.8" height="2.4" rx="1" fill="#94A3B8"/>
+        </svg>
+      </div>
       <div class="brand-text">
-        <span class="brand-title">ParkFinder</span>
-        <span class="brand-city" data-i18n="header.city">Buenos Aires</span>
+        <span class="brand-title">park<span class="brand-title-accent">Finder</span></span>
+        <span class="brand-tagline" data-i18n="brand.tagline">Tu lugar, antes de llegar.</span>
       </div>
     </a>
 
-    <nav class="header-actions" aria-label="Acciones principales">
+    <nav class="primary-nav" aria-label="Navegación principal" data-i18n-aria="nav.aria">
+      <button type="button" class="nav-item is-active" id="navExplore" data-nav="explore">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span data-i18n="nav.explore">Explorar</span>
+      </button>
+      <button type="button" class="nav-item" id="bookingsBtn" data-nav="bookings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="bookingsBtnLabel">Mis reservas (0)</span>
+      </button>
+      <button type="button" class="nav-item" id="favoritesBtn" data-nav="favorites">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        <span data-i18n="nav.favorites">Favoritos</span>
+        <span class="nav-count" id="favoritesCountBadge">0</span>
+      </button>
+      <button type="button" class="nav-item" id="profileBtn" data-nav="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+        <span data-i18n="nav.profile">Mi perfil</span>
+      </button>
+    </nav>
+
+    <div class="header-actions">
+      <button type="button" class="theme-toggle" id="themeToggleBtn" aria-pressed="false" aria-label="Cambiar tema claro u oscuro">
+        <span id="themeToggleIcon" aria-hidden="true"></span>
+        <span class="theme-toggle-label" id="themeToggleLabel">Oscuro</span>
+      </button>
       <div class="lang-switch" role="group" aria-label="Idioma / Language">
         <button class="lang-btn active" type="button" data-lang="es" aria-pressed="true">ES</button>
         <button class="lang-btn" type="button" data-lang="en" aria-pressed="false">EN</button>
       </div>
-      <button class="btn btn-secondary btn-sm btn-pill" id="bookingsBtn" type="button">Mis reservas (0)</button>
       <button class="btn btn-ghost btn-sm btn-pill" id="statusBtn" type="button" data-i18n="header.statusBtn" aria-label="Información y QA">Info · QA</button>
-    </nav>
+    </div>
   </div>
 </header>
 
@@ -58,19 +107,24 @@
 </div>
 
 <main id="top">
-  <section class="wrap search-section" aria-label="Buscador de estacionamientos" data-i18n-aria="search.aria">
+  <!-- Compact Integrated Progressive Search Band -->
+  <section class="search-section" aria-label="Buscador de estacionamientos" data-i18n-aria="search.aria">
     <div class="search-card is-collapsed" id="searchCard">
-      <div class="search-header">
-        <h1 data-i18n="search.title">¿Dónde vas a estacionar?</h1>
-        <span class="search-caption" data-i18n="search.caption">Buenos Aires (UTC-3) · Disponibilidad y tarifas de demostración</span>
+      <div class="search-meta-bar">
+        <h1 class="search-heading">
+          <span class="search-heading-title" data-i18n="search.title">¿A dónde vas?</span>
+          <span class="muted" data-i18n="search.caption">Buenos Aires (UTC-3) · Disponibilidad y tarifas demo</span>
+        </h1>
+        <div class="dest-line" id="destLine"></div>
       </div>
 
-      <!-- Mobile compact search summary pill -->
+      <!-- Mobile floating top "¿A dónde vas?" progressive search trigger -->
       <button type="button" class="mobile-search-summary" id="mobileSearchToggle" aria-expanded="false" aria-controls="searchForm">
         <span class="mss-icon" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </span>
         <span class="mss-content">
+          <span class="mss-prompt" data-i18n="search.mobilePrompt">¿A dónde vas?</span>
           <span class="mss-dest" id="mssDest">Obelisco / Microcentro</span>
           <span class="mss-meta" id="mssMeta">—</span>
         </span>
@@ -78,29 +132,68 @@
       </button>
 
       <form id="searchForm" class="search-form" autocomplete="off" novalidate>
-        <div class="f f-zone">
-          <label for="zoneSel" data-i18n="search.destination">Zona o barrio</label>
-          <select id="zoneSel" class="input">
-            <option value="obeliso" data-i18n="zone.obeliso">Obelisco / Microcentro</option>
-            <option value="puertomadero" data-i18n="zone.puertomadero">Puerto Madero</option>
-            <option value="palermosoho" data-i18n="zone.palermosoho">Palermo Soho</option>
-            <option value="recoleta" data-i18n="zone.recoleta">Recoleta</option>
-            <option value="hospitalitaliano" data-i18n="zone.hospitalitaliano">Hospital Italiano</option>
-            <option value="santelmo" data-i18n="zone.santelmo">San Telmo</option>
-            <option value="colegiales" data-i18n="zone.colegiales">Colegiales</option>
-            <option value="chacarita" data-i18n="zone.chacarita">Chacarita</option>
-            <option value="custom" data-i18n="search.customZone">Dirección personalizada…</option>
-          </select>
+        <!-- Unified Progressive Destination Segment -->
+        <div class="sf-seg sf-dest">
+          <div class="sf-label">
+            <label for="customAddr" data-i18n="search.whereLabel">Destino, dirección, POI o comercio</label>
+            <select id="zoneSel" class="sf-select-mini" aria-label="Zona o barrio" data-i18n-aria="search.destination">
+              <option value="obeliso" data-i18n="zone.obeliso">Obelisco / Microcentro</option>
+              <option value="puertomadero" data-i18n="zone.puertomadero">Puerto Madero</option>
+              <option value="palermosoho" data-i18n="zone.palermosoho">Palermo Soho</option>
+              <option value="recoleta" data-i18n="zone.recoleta">Recoleta</option>
+              <option value="hospitalitaliano" data-i18n="zone.hospitalitaliano">Hospital Italiano</option>
+              <option value="santelmo" data-i18n="zone.santelmo">San Telmo</option>
+              <option value="colegiales" data-i18n="zone.colegiales">Colegiales</option>
+              <option value="chacarita" data-i18n="zone.chacarita">Chacarita</option>
+              <option value="custom" data-i18n="search.customZone">Dirección / POI…</option>
+            </select>
+          </div>
+          <div class="sf-dest-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <input id="customAddr" class="sf-input-clean" type="text" placeholder="¿A dónde vas? Ej. Teatro Colón, Abasto, Av. Corrientes…" data-i18n-placeholder="search.addressPlaceholder" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="destDropdown" />
+            <button type="button" class="sf-fav-dest-btn" id="favDestBtn" aria-pressed="false" aria-label="Guardar destino actual en favoritos" title="Guardar destino en favoritos">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </button>
+          </div>
+          <div class="dest-dropdown" id="destDropdown" role="listbox" hidden></div>
         </div>
 
-        <div class="f f-addr">
-          <label for="customAddr" data-i18n="search.address">Dirección exacta (opcional)</label>
-          <input id="customAddr" class="input" type="text" placeholder="Ej. Av. Corrientes 1234, CABA" data-i18n-placeholder="search.addressPlaceholder" />
+        <!-- Check-in Date & Time -->
+        <div class="sf-seg sf-interval">
+          <div class="sf-label"><span data-i18n="search.checkIn">Entrada</span></div>
+          <div class="sf-dt-pair">
+            <label for="dateInput" class="sr-only" data-i18n="search.date">Fecha de entrada</label>
+            <input id="dateInput" class="input-compact" type="date" aria-label="Fecha de entrada" data-i18n-aria="search.date" />
+            <label for="arrivalInput" class="sr-only" data-i18n="search.arrival">Hora de entrada</label>
+            <input id="arrivalInput" class="input-compact" type="time" value="10:00" aria-label="Hora de entrada" data-i18n-aria="search.arrival" />
+          </div>
         </div>
 
-        <div class="f f-vehicle">
-          <label for="vehicleSel" data-i18n="search.vehicle">Vehículo</label>
-          <select id="vehicleSel" class="input">
+        <!-- Check-out Date & Time -->
+        <div class="sf-seg sf-interval">
+          <div class="sf-label"><span data-i18n="search.checkOut">Salida</span></div>
+          <div class="sf-dt-pair">
+            <label for="departureDateInput" class="sr-only" data-i18n="search.departureDate">Fecha de salida</label>
+            <input id="departureDateInput" class="input-compact" type="date" aria-label="Fecha de salida" data-i18n-aria="search.departureDate" />
+            <label for="departureInput" class="sr-only" data-i18n="search.departure">Hora de salida</label>
+            <input id="departureInput" class="input-compact" type="time" value="12:00" aria-label="Hora de salida" data-i18n-aria="search.departure" />
+          </div>
+        </div>
+
+        <!-- Duration & Presets -->
+        <div class="sf-presets-col">
+          <span class="duration-pill" id="durationBadge">2 h</span>
+          <div class="quick-presets" role="group" aria-label="Duración rápida">
+            <button type="button" class="preset-btn" data-preset="2h">+2 h</button>
+            <button type="button" class="preset-btn" data-preset="4h">+4 h</button>
+            <button type="button" class="preset-btn" data-preset="overnight" data-i18n="search.presetOvernight">Nocturna</button>
+          </div>
+        </div>
+
+        <!-- Vehicle Segment -->
+        <div class="sf-seg sf-vehicle">
+          <div class="sf-label"><label for="vehicleSel" data-i18n="search.vehicle">Vehículo</label></div>
+          <select id="vehicleSel">
             <option value="motorcycle" data-i18n="vehicle.option.motorcycle">Moto · hasta 1,30 m</option>
             <option value="car" selected data-i18n="vehicle.option.car">Auto · hasta 1,55 m</option>
             <option value="suv" data-i18n="vehicle.option.suv">SUV / Pick-up · hasta 1,85 m</option>
@@ -108,92 +201,67 @@
           </select>
         </div>
 
-        <div class="f f-submit">
+        <!-- Search CTA -->
+        <div class="sf-submit">
           <button class="btn btn-primary" id="searchBtn" type="submit">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <span data-i18n="search.searchBtn">Buscar</span>
           </button>
-        </div>
-
-        <div class="f-interval-row">
-          <div class="interval-group">
-            <div class="interval-group-label" data-i18n="search.checkIn">Entrada</div>
-            <div class="f">
-              <label for="dateInput" class="sr-only" data-i18n="search.date">Fecha de entrada</label>
-              <input id="dateInput" class="input" type="date" aria-label="Fecha de entrada" data-i18n-aria="search.date" />
-            </div>
-            <div class="f">
-              <label for="arrivalInput" class="sr-only" data-i18n="search.arrival">Hora de entrada</label>
-              <input id="arrivalInput" class="input" type="time" value="10:00" aria-label="Hora de entrada" data-i18n-aria="search.arrival" />
-            </div>
-          </div>
-
-          <div class="interval-group">
-            <div class="interval-group-label" data-i18n="search.checkOut">Salida</div>
-            <div class="f">
-              <label for="departureDateInput" class="sr-only" data-i18n="search.departureDate">Fecha de salida</label>
-              <input id="departureDateInput" class="input" type="date" aria-label="Fecha de salida" data-i18n-aria="search.departureDate" />
-            </div>
-            <div class="f">
-              <label for="departureInput" class="sr-only" data-i18n="search.departure">Hora de salida</label>
-              <input id="departureInput" class="input" type="time" value="12:00" aria-label="Hora de salida" data-i18n-aria="search.departure" />
-            </div>
-          </div>
-
-          <div class="interval-summary-box">
-            <span class="duration-pill" id="durationBadge">2 h</span>
-            <div class="quick-presets" role="group" aria-label="Duración rápida">
-              <button type="button" class="preset-btn" data-preset="2h">+2 h</button>
-              <button type="button" class="preset-btn" data-preset="4h">+4 h</button>
-              <button type="button" class="preset-btn" data-preset="overnight" data-i18n="search.presetOvernight">Nocturna</button>
-            </div>
-          </div>
         </div>
       </form>
 
       <div id="intervalError" class="form-error" role="alert" hidden></div>
-      <div class="dest-line" id="destLine"></div>
     </div>
   </section>
 
-  <!-- Sticky Filter Bar (PF-05 & PF-06) -->
+  <!-- Quick Controls & Combined Filters Bar -->
   <div class="filter-bar-wrap">
-    <div class="wrap filter-bar" role="region" aria-label="Filtros de estacionamientos" data-i18n-aria="filters.aria">
-      <div class="filter-chips" id="amenityFilters">
-        <label class="chip-check-wrap" for="onlyAvailable">
-          <input id="onlyAvailable" type="checkbox" />
-          <span data-i18n="filters.onlyAvailable">Solo disponibles</span>
-        </label>
+    <div class="filter-bar" role="region" aria-label="Filtros de estacionamientos" data-i18n-aria="filters.aria">
+      <div class="filter-left">
+        <div class="quick-sort-group" role="group" aria-label="Orden rápido" data-i18n-aria="filters.quickSortAria">
+          <button type="button" class="quick-sort-btn" data-quick-sort="precio_asc" aria-pressed="false" data-i18n="filters.quickCheapest">Más barato</button>
+          <button type="button" class="quick-sort-btn is-active" data-quick-sort="cercano" aria-pressed="true" data-i18n="filters.quickNearest">Más cercano</button>
+          <button type="button" class="quick-sort-btn" data-quick-sort="rating_desc" aria-pressed="false" data-i18n="filters.quickTopRated">Mejor puntuado</button>
+        </div>
 
-        <button type="button" class="chip" data-amenity="covered" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 10v9h14v-9"/></svg>
-          <span data-i18n="amenity.covered">Techado</span>
-        </button>
+        <span class="filter-divider" aria-hidden="true"></span>
 
-        <button type="button" class="chip" data-amenity="open24" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-          <span data-i18n="amenity.open24">24 hs</span>
-        </button>
+        <div class="filter-chips" id="amenityFilters">
+          <label class="chip-check-wrap" for="onlyAvailable">
+            <input id="onlyAvailable" type="checkbox" />
+            <span data-i18n="filters.onlyAvailable">Solo disponibles</span>
+          </label>
 
-        <button type="button" class="chip" data-amenity="securityCctv" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span data-i18n="amenity.securityCctv">Seguridad / CCTV</span>
-        </button>
+          <button type="button" class="chip" data-amenity="covered" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 10v9h14v-9"/></svg>
+            <span data-i18n="amenity.covered">Techado</span>
+          </button>
 
-        <button type="button" class="chip" data-amenity="evCharging" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span data-i18n="amenity.evCharging">Carga EV</span>
-        </button>
+          <button type="button" class="chip" data-amenity="open24" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span data-i18n="amenity.open24">24 hs</span>
+          </button>
 
-        <button type="button" class="chip" data-amenity="accessible" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2"/><path d="m7 9 5 1 5-1"/><path d="M12 10v5l-3 5"/><path d="m12 15 3 5"/></svg>
-          <span data-i18n="amenity.accessible">Accesible</span>
-        </button>
+          <button type="button" class="chip" data-amenity="securityCctv" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span data-i18n="amenity.securityCctv">Seguridad / CCTV</span>
+          </button>
 
-        <button type="button" class="chip" data-amenity="valet" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/></svg>
-          <span data-i18n="amenity.valet">Valet</span>
-        </button>
+          <button type="button" class="chip" data-amenity="evCharging" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span data-i18n="amenity.evCharging">Carga EV</span>
+          </button>
+
+          <button type="button" class="chip" data-amenity="accessible" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2"/><path d="m7 9 5 1 5-1"/><path d="M12 10v5l-3 5"/><path d="m12 15 3 5"/></svg>
+            <span data-i18n="amenity.accessible">Accesible</span>
+          </button>
+
+          <button type="button" class="chip" data-amenity="valet" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/></svg>
+            <span data-i18n="amenity.valet">Valet</span>
+          </button>
+        </div>
       </div>
 
       <div class="filter-selects">
@@ -220,60 +288,119 @@
           <option value="5">≤ 5 km</option>
         </select>
 
+        <button type="button" class="btn-adv-filters" id="advancedFiltersBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          <span id="advancedFiltersLabel" data-i18n="filters.advancedBtn">Filtros</span>
+        </button>
+
         <button type="button" class="btn-clear-filters" id="clearFiltersBtn" hidden data-i18n="filters.clear">Limpiar filtros</button>
       </div>
     </div>
   </div>
 
-  <!-- Split Marketplace Workspace -->
-  <div class="wrap layout" id="marketplaceLayout" data-mobile-view="list">
-    <section class="panel" aria-label="Resultados de cocheras" data-i18n-aria="results.aria">
-      <div class="panel-head">
-        <div>
-          <h2 id="resultsTitle" data-i18n="results.title">Estacionamientos</h2>
-          <div class="muted" id="summaryLine">—</div>
+  <!-- Hybrid Workspace: Desktop 40% List | Divider | 60% Map · Mobile Full-Screen Map + Draggable Bottom Sheet -->
+  <div class="workspace-shell">
+    <div class="layout" id="marketplaceLayout" data-mobile-view="list" data-sheet-state="half">
+      <section class="panel" id="resultsSheet" aria-label="Resultados de estacionamientos" data-i18n-aria="results.aria">
+        <!-- Mobile Draggable & Keyboard-Accessible Bottom Sheet Handle -->
+        <div class="sheet-handle-wrap">
+          <button type="button" class="sheet-handle-btn" id="sheetHandle" aria-label="Ajustar altura del panel de resultados" aria-expanded="true">
+            <span class="sheet-handle-pill" aria-hidden="true"></span>
+            <span class="sheet-handle-text" id="sheetHandleLabel">—</span>
+          </button>
         </div>
-        <label class="sort-label" for="sortSel">
-          <span data-i18n="results.sort">Ordenar</span>
-          <select id="sortSel" class="input input-sm">
-            <option value="cercano" data-i18n="results.sortCercano">Más cercanas</option>
-            <option value="precio_asc" data-i18n="results.sortPrecioAsc">Menor precio total</option>
-            <option value="precio_desc" data-i18n="results.sortPrecioDesc">Mayor precio total</option>
-            <option value="rating_desc" data-i18n="results.sortRatingDesc">Mejor puntuadas (demo)</option>
-          </select>
-        </label>
-      </div>
 
-      <div id="resultsList" class="results"></div>
-    </section>
-
-    <section class="map-card" aria-label="Mapa de cocheras" data-i18n-aria="map.aria">
-      <div class="map-head">
-        <span class="legend"><i class="dot dot-dest"></i> <span data-i18n="map.destination">Destino</span></span>
-        <span class="legend"><i class="dot dot-car"></i> <span data-i18n="map.garage">Estacionamiento</span></span>
-      </div>
-      <div id="map"></div>
-      <div class="map-footnote" data-i18n="map.distanceFootnote">Distancias en línea recta estimadas · Ubicaciones demo</div>
-      <div id="mapDown" class="map-down" hidden>
-        <div class="map-down-box">
-          <strong data-i18n="map.downTitle">Mapa no disponible</strong>
-          <span data-i18n="map.downText">La lista local, los filtros, los precios y las reservas siguen funcionando normalmente.</span>
+        <div class="panel-head">
+          <div>
+            <h2 id="resultsTitle" data-i18n="results.title">Estacionamientos</h2>
+            <div class="muted" id="summaryLine">—</div>
+          </div>
+          <label class="sort-label" for="sortSel">
+            <span data-i18n="results.sort">Ordenar</span>
+            <select id="sortSel" class="input-sm">
+              <option value="cercano" data-i18n="results.sortCercano">Más cercanas</option>
+              <option value="precio_asc" data-i18n="results.sortPrecioAsc">Menor precio total</option>
+              <option value="precio_desc" data-i18n="results.sortPrecioDesc">Mayor precio total</option>
+              <option value="rating_desc" data-i18n="results.sortRatingDesc">Mejor puntuadas (demo)</option>
+            </select>
+          </label>
         </div>
-      </div>
-    </section>
+
+        <!-- Smart Recommendations Strip -->
+        <div id="recommendationsStrip" class="recs-strip" aria-label="Recomendaciones inteligentes" hidden></div>
+
+        <!-- Commercial Results Cards -->
+        <div id="resultsList" class="results"></div>
+      </section>
+
+      <!-- Desktop Adjustable Split Divider (60% Map / 40% List default) -->
+      <div class="split-divider" id="splitDivider" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Ajustar ancho entre lista y mapa" aria-valuenow="40" aria-valuemin="30" aria-valuemax="65"></div>
+
+      <!-- Interactive Map Column (60% Desktop / Full-Screen Mobile Background) -->
+      <section class="map-card" aria-label="Mapa de estacionamientos" data-i18n-aria="map.aria">
+        <div class="map-head">
+          <span class="legend"><i class="dot dot-dest"></i> <span data-i18n="map.destination">Destino</span></span>
+          <span class="legend"><i class="dot dot-car"></i> <span data-i18n="map.availablePin">Disponible</span></span>
+          <span class="legend"><i class="dot dot-unavail"></i> <span data-i18n="map.unavailablePin">No disp.</span></span>
+        </div>
+        <div id="map"></div>
+        <div class="map-footnote" data-i18n="map.distanceFootnote">Distancias en línea recta estimadas · Ubicaciones demo</div>
+        <div id="mapDown" class="map-down" hidden>
+          <div class="map-down-box">
+            <strong data-i18n="map.downTitle">Mapa no disponible</strong>
+            <span data-i18n="map.downText">La lista local, los filtros, los precios y las reservas siguen funcionando normalmente.</span>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <footer class="wrap footer">
-    <div data-i18n="footer.text">© 2026 ParkFinder · Buenos Aires (UTC-3) · Demo comercial con inventario sintético y almacenamiento local</div>
+  <footer class="footer">
+    <div data-i18n="footer.text">© 2026 parkFinder · Tu lugar, antes de llegar. · Buenos Aires (UTC-3) · Demo comercial con datos sintéticos locales</div>
     <button type="button" class="footer-link" id="footerInfoBtn" data-i18n="footer.infoLink">Alcance técnico y panel QA</button>
   </footer>
 </main>
 
-<!-- Mobile floating Map / List toggle -->
+<!-- Floating Compare Dock (up to 3 garages) -->
+<div class="compare-bar" id="compareBar" role="region" aria-label="Comparador de estacionamientos" hidden>
+  <div class="compare-bar-items" id="compareBarItems"></div>
+  <div class="compare-bar-actions">
+    <button type="button" class="compare-clear-btn" id="compareClearBtn" data-i18n="compare.clear">Limpiar</button>
+    <button type="button" class="btn btn-primary btn-sm btn-pill" id="compareOpenBtn">Comparar (0/3)</button>
+  </div>
+</div>
+
+<!-- Mobile Floating Map / List Toggle Pill -->
 <button type="button" class="mobile-view-toggle" id="mobileViewToggle" aria-label="Cambiar entre mapa y lista">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
   <span id="mobileViewToggleLabel" data-i18n="mobile.showMap">Ver mapa</span>
 </button>
+
+<!-- Mobile Bottom Navigation (Explorar, Mis reservas, Favoritos, Mi perfil) -->
+<nav class="mobile-bottom-nav" aria-label="Navegación móvil" data-i18n-aria="nav.mobileAria">
+  <button type="button" class="mbn-item is-active" id="mbnExplore" data-nav="explore">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <span data-i18n="nav.explore">Explorar</span>
+  </button>
+  <button type="button" class="mbn-item" id="mbnBookings" data-nav="bookings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span data-i18n="nav.bookingsShort">Reservas</span>
+    <span class="mbn-badge" id="mbnBookingsCount" hidden>0</span>
+  </button>
+  <button type="button" class="mbn-item" id="mbnFavorites" data-nav="favorites">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+    <span data-i18n="nav.favorites">Favoritos</span>
+    <span class="mbn-badge" id="mbnFavoritesCount" hidden>0</span>
+  </button>
+  <button type="button" class="mbn-item" id="mbnProfile" data-nav="profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+    <span data-i18n="nav.profile">Mi perfil</span>
+  </button>
+</nav>
+
+<!-- Slide-Over Detail Panel (Desktop Side Panel / Mobile Full Screen) -->
+<div class="detail-backdrop" id="detailBackdrop" aria-hidden="true"></div>
+<aside class="detail-panel" id="detailPanel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Ficha del estacionamiento"></aside>
 
 <!-- Modals -->
 <div class="modal" id="statusModal" aria-hidden="true"></div>
@@ -281,6 +408,11 @@
 <div class="modal" id="qrModal" aria-hidden="true"></div>
 <div class="modal" id="reserveModal" aria-hidden="true"></div>
 <div class="modal" id="successModal" aria-hidden="true"></div>
+<div class="modal" id="compareModal" aria-hidden="true"></div>
+<div class="modal" id="galleryModal" aria-hidden="true"></div>
+<div class="modal" id="favoritesModal" aria-hidden="true"></div>
+<div class="modal" id="profileModal" aria-hidden="true"></div>
+<div class="modal" id="advancedFiltersModal" aria-hidden="true"></div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -288,33 +420,31 @@
 'use strict';
 
 /* =======================================================================
-   ParkFinder Sprint 02 — Driver Experience & Consumer UX Redesign
-   Preserves Sprint 01 booking engine (PF-01..PF-04) and adds:
-   - PF-05: Tri-state synthetic amenities (yes/no/unknown) & combined filters
-   - PF-06: Explicitly demo-labelled ratings (no Google attribution) & sort
-   - PF-14: Validated keyless Google Maps external directions (demo location)
-            + OSM/Leaflet provider adapter & resilient list fallback
-   - PF-01 ext: Independent arrival/departure dates, overnight & multi-day
-            intervals (max 72h, BA UTC-3), multi-day operating hours & proration
+   parkFinder Sprint 2B — Urban Tech Driver Experience
+   Preserves 100% of Sprint 1 (PF-01..PF-04) & Sprint 2A (PF-05/06/14/multi-day)
+   and implements Sprint 2B scope from 02_trabajo/design_system/driver_ux_v01.md:
+   - Urban Tech brand identity (parkFinder + tagline + car-in-bay SVG isotype)
+   - Light / Dark manual toggle persisted locally
+   - Integrated progressive search (POIs, businesses, addresses, explicit geolocation, recents & favorites)
+   - Hybrid 60% map / 40% list desktop split with adjustable divider + mobile full-screen map & draggable sheet
+   - Commercial cards with labeled local illustrative SVG imagery & avg hourly pricing
+   - Detail side panel / mobile full screen with 5 tabs & expandable Lightbox gallery
+   - Comparator for up to 3 garages under same interval & vehicle
+   - Deterministic smart recommendations (value normalization & <=2 low availability)
+   - Favorites (garages + destinations) and Recent destinations persisted locally
    ======================================================================= */
 
 const Core = window.ParkFinderCore;
 
-const ZONES = [
-  { id: 'obeliso', label: 'Obelisco / Microcentro', coords: [-34.6037, -58.3816] },
-  { id: 'puertomadero', label: 'Puerto Madero', coords: [-34.6074, -58.3610] },
-  { id: 'palermosoho', label: 'Palermo Soho', coords: [-34.5885, -58.4290] },
-  { id: 'recoleta', label: 'Recoleta', coords: [-34.5956, -58.3892] },
-  { id: 'hospitalitaliano', label: 'Hospital Italiano', coords: [-34.6076, -58.4262] },
-  { id: 'santelmo', label: 'San Telmo', coords: [-34.6148, -58.3736] },
-  { id: 'colegiales', label: 'Colegiales', coords: [-34.5739, -58.4552] },
-  { id: 'chacarita', label: 'Chacarita', coords: [-34.5919, -58.4403] }
-];
+const ZONES = Core.DEMO_DESTINATIONS.filter(function (d) { return d.type === 'zone'; });
 const ZONE_MAP = {};
 ZONES.forEach(function (z) { ZONE_MAP[z.id] = z; });
 
 const FALLBACK_COORDS = {};
-ZONES.forEach(function (z) { FALLBACK_COORDS[z.id] = z.coords.slice(); });
+Core.DEMO_DESTINATIONS.forEach(function (d) {
+  FALLBACK_COORDS[Core.normalizeSearchText(d.label)] = d.coords.slice();
+  FALLBACK_COORDS[d.id] = d.coords.slice();
+});
 FALLBACK_COORDS['obelisco'] = [-34.6037, -58.3816];
 FALLBACK_COORDS['microcentro'] = ZONE_MAP['obeliso'].coords.slice();
 FALLBACK_COORDS['palermo soho'] = ZONE_MAP['palermosoho'].coords.slice();
@@ -325,17 +455,17 @@ FALLBACK_COORDS['recoleta'] = ZONE_MAP['recoleta'].coords.slice();
 FALLBACK_COORDS['colegiales'] = ZONE_MAP['colegiales'].coords.slice();
 FALLBACK_COORDS['chacarita'] = ZONE_MAP['chacarita'].coords.slice();
 
-/* Synthetic catalog (local mutable copy for demo & T07 rate mutation verification) */
 const GARAGES = Core.DEFAULT_GARAGES.map(function (g) {
   return Object.assign({}, g, {
     operatingHours: Object.assign({}, g.operatingHours),
     acceptedVehicleTypes: g.acceptedVehicleTypes.slice(),
     amenities: Object.assign({}, g.amenities),
-    rating: Object.assign({}, g.rating)
+    rating: Object.assign({}, g.rating),
+    gallery: (g.gallery || []).slice(),
+    demoReviews: (g.demoReviews || []).slice()
   });
 });
 
-/* Isolated QA Sandbox garages (capacity 1 non-24h, capacity 2 24h, capacity 1 24h overnight) */
 const SANDBOX_GARAGES = [
   {
     id: 'qa-cap1-centro',
@@ -352,6 +482,12 @@ const SANDBOX_GARAGES = [
     maxHeightM: 1.80,
     amenities: { covered: true, securityCctv: true, evCharging: false, accessible: null, valet: false, open24: false },
     rating: { score: 4.5, reviewCount: 24, provenance: 'synthetic_qa' },
+    mainImage: 'assets/garages/colegiales-main.svg',
+    gallery: [
+      { src: 'assets/garages/colegiales-main.svg', captionEs: 'Ilustración QA Capacidad 1', captionEn: 'QA Capacity 1 Illustration', provenance: 'illustrative_svg_demo' },
+      { src: 'assets/garages/gallery-interior-bays.svg', captionEs: 'Plaza individual sintética QA', captionEn: 'Synthetic QA single bay', provenance: 'illustrative_svg_demo' }
+    ],
+    demoReviews: [],
     dataProvenance: 'synthetic_qa'
   },
   {
@@ -369,6 +505,12 @@ const SANDBOX_GARAGES = [
     maxHeightM: 2.50,
     amenities: { covered: true, securityCctv: true, evCharging: true, accessible: true, valet: false, open24: true },
     rating: { score: 4.8, reviewCount: 40, provenance: 'synthetic_qa' },
+    mainImage: 'assets/garages/puerto-madero-main.svg',
+    gallery: [
+      { src: 'assets/garages/puerto-madero-main.svg', captionEs: 'Ilustración QA Capacidad 2', captionEn: 'QA Capacity 2 Illustration', provenance: 'illustrative_svg_demo' },
+      { src: 'assets/garages/gallery-ev-zone.svg', captionEs: 'Sector EV sintético QA', captionEn: 'Synthetic QA EV bay', provenance: 'illustrative_svg_demo' }
+    ],
+    demoReviews: [],
     dataProvenance: 'synthetic_qa'
   },
   {
@@ -386,6 +528,11 @@ const SANDBOX_GARAGES = [
     maxHeightM: 2.20,
     amenities: { covered: true, securityCctv: true, evCharging: null, accessible: true, valet: false, open24: true },
     rating: { score: 4.6, reviewCount: 19, provenance: 'synthetic_qa' },
+    mainImage: 'assets/garages/obelisco-main.svg',
+    gallery: [
+      { src: 'assets/garages/obelisco-main.svg', captionEs: 'Ilustración QA 24 hs Nocturno', captionEn: 'QA 24/7 Overnight Illustration', provenance: 'illustrative_svg_demo' }
+    ],
+    demoReviews: [],
     dataProvenance: 'synthetic_qa'
   }
 ];
@@ -395,7 +542,12 @@ const LS = {
   sandboxBookings: 'parkfinder.v2.sandbox.bookings',
   zoneCoords: 'parkfinder.v1.zoneCoords',
   offline: 'parkfinder.v1.offline',
-  lang: 'parkfinder.v1.lang'
+  lang: 'parkfinder.v1.lang',
+  theme: 'parkfinder.v2.theme',
+  favGarages: 'parkfinder.v2.favoriteGarages',
+  favDestinations: 'parkfinder.v2.favoriteDestinations',
+  recentDestinations: 'parkfinder.v2.recentDestinations',
+  splitPct: 'parkfinder.v2.splitPct'
 };
 
 const WALK_SPEED_KMH = 5;
@@ -403,6 +555,8 @@ const EARTH_RADIUS_KM = 6371;
 
 const state = {
   lang: 'es',
+  theme: 'light',
+  splitPct: 40, // Default 40% list / 60% map
   date: '',
   departureDate: '',
   lastSyncedArrivalDate: '',
@@ -419,7 +573,20 @@ const state = {
     maxDistanceKm: ''
   },
   expandedDetails: {},
+  selectedGarageId: null,
+  detailGarageId: null,
+  detailTab: 'info',
+  detailPhotoIndex: 0,
+  galleryGarageId: null,
+  galleryIndex: 0,
+  compareIds: [],
+  favoriteGarageIds: [],
+  favoriteDestinations: [],
+  recentDestinations: [],
+  favoritesTab: 'garages',
+  recommendations: null,
   mobileView: 'list',
+  sheetState: 'half', // peek | half | full
   offline: false,
   sandboxMode: false,
   searching: false,
@@ -443,8 +610,6 @@ const state = {
   storageImplOverride: null
 };
 
-/* ------------------------- Map Provider Interface (PF-14) ------------------------- */
-
 const MapProviderRegistry = {
   activeId: 'osm_leaflet',
   providers: {
@@ -457,7 +622,7 @@ const MapProviderRegistry = {
     google_maps: {
       id: 'google_maps',
       meta: Core.MAP_PROVIDERS.adapters.google_maps,
-      isAvailable: function () { return false; }, // Proposed only — no keys or billing activated
+      isAvailable: function () { return false; },
       buildDirectionsUrl: function (garage) { return Core.buildExternalDirectionsUrl(garage); }
     }
   },
@@ -466,11 +631,28 @@ const MapProviderRegistry = {
   }
 };
 
-/* ------------------------- i18n (ES / EN) ------------------------- */
+/* ------------------------- Bilingual i18n (ES / EN) ------------------------- */
 
 const I18N = {
   es: {
-    meta: { title: 'ParkFinder · Estacionamientos privados en Buenos Aires' },
+    meta: { title: 'parkFinder · Tu lugar, antes de llegar.' },
+    brand: { tagline: 'Tu lugar, antes de llegar.' },
+    nav: {
+      aria: 'Navegación principal',
+      mobileAria: 'Navegación móvil',
+      explore: 'Explorar',
+      bookingsShort: 'Reservas',
+      favorites: 'Favoritos',
+      profile: 'Mi perfil'
+    },
+    theme: {
+      dark: 'Oscuro',
+      light: 'Claro',
+      switchToDark: 'Cambiar a modo oscuro',
+      switchToLight: 'Cambiar a modo claro',
+      changedDark: 'Modo oscuro activado.',
+      changedLight: 'Modo claro activado.'
+    },
     zone: {
       obeliso: 'Obelisco / Microcentro',
       puertomadero: 'Puerto Madero',
@@ -529,11 +711,13 @@ const I18N = {
       action: 'Volver a conectar'
     },
     search: {
-      title: '¿Dónde vas a estacionar?',
-      caption: 'Buenos Aires (UTC-3) · Disponibilidad y tarifas de demostración',
+      title: '¿A dónde vas?',
+      mobilePrompt: '¿A dónde vas?',
+      whereLabel: 'Destino, dirección, POI o comercio',
+      caption: 'Buenos Aires (UTC-3) · Disponibilidad y tarifas demo',
       destination: 'Zona o barrio',
       address: 'Dirección exacta (opcional)',
-      addressPlaceholder: 'Ej. Av. Corrientes 1234, CABA',
+      addressPlaceholder: '¿A dónde vas? Ej. Teatro Colón, Abasto, Av. Corrientes…',
       vehicle: 'Vehículo',
       checkIn: 'Entrada',
       checkOut: 'Salida',
@@ -541,18 +725,35 @@ const I18N = {
       departureDate: 'Fecha de salida',
       arrival: 'Hora de entrada',
       departure: 'Hora de salida',
-      customZone: 'Dirección personalizada…',
+      customZone: 'Dirección / POI…',
       searchBtn: 'Buscar',
       searchingBtn: 'Buscando…',
       editBtn: 'Editar',
-      doneEditBtn: 'Cerrar',
+      doneEditBtn: 'Listo',
       presetOvernight: 'Nocturna',
       overnightLabel: 'Nocturna · {dur}',
       searching: 'Buscando “{address}”…',
-      aria: 'Buscador de estacionamientos'
+      aria: 'Buscador de estacionamientos',
+      useCurrentLoc: 'Usar mi ubicación actual (requiere permiso)',
+      groupFavorites: 'Destinos favoritos',
+      groupRecents: 'Destinos recientes',
+      groupZones: 'Barrios y zonas',
+      groupPois: 'Puntos de interés (catálogo demo)',
+      groupBusinesses: 'Comercios y oficinas (catálogo demo)',
+      clearRecents: 'Limpiar',
+      geoDenied: 'Permiso de ubicación denegado. Seguís usando la zona o catálogo demo local.',
+      geoUnavailable: 'No pudimos obtener tu ubicación actual. Probá elegir un destino del catálogo demo.',
+      geoSuccess: 'Ubicación actual aplicada como destino.',
+      currentLocLabel: 'Mi ubicación actual',
+      saveDestFav: 'Destino guardado en favoritos.',
+      removeDestFav: 'Destino quitado de favoritos.'
     },
     filters: {
       aria: 'Filtros de estacionamientos',
+      quickSortAria: 'Orden rápido',
+      quickCheapest: 'Más barato',
+      quickNearest: 'Más cercano',
+      quickTopRated: 'Mejor puntuado',
       onlyAvailable: 'Solo disponibles',
       maxPrice: 'Precio máximo',
       anyPrice: 'Precio máx.',
@@ -560,6 +761,10 @@ const I18N = {
       anyRating: 'Puntuación (demo)',
       maxDistance: 'Distancia máxima',
       anyDistance: 'Distancia',
+      advancedBtn: 'Filtros',
+      advancedTitle: 'Filtros avanzados',
+      advancedSub: 'Combiná precio, distancia, puntuación demo y servicios sin alterar la disponibilidad real.',
+      apply: 'Ver {n} resultados',
       clear: 'Limpiar filtros',
       clearCount: 'Limpiar ({n})'
     },
@@ -580,10 +785,13 @@ const I18N = {
     map: {
       destination: 'Destino',
       garage: 'Estacionamiento',
+      availablePin: 'Disponible',
+      unavailablePin: 'No disp.',
       distanceFootnote: 'Distancias en línea recta estimadas · Ubicaciones demo',
       downTitle: 'Mapa no disponible',
       downText: 'La lista local, los filtros, los precios y las reservas siguen funcionando normalmente.',
       reserveFromMap: 'Reservar',
+      detailFromMap: 'Ver ficha',
       directionsShort: 'Ruta (demo)',
       walkMeta: '~{min} min a pie est. · {km} km (línea recta)',
       destPopup: 'Destino seleccionado',
@@ -593,7 +801,15 @@ const I18N = {
     },
     mobile: {
       showMap: 'Ver mapa',
-      showList: 'Ver lista'
+      showList: 'Ver lista',
+      sheetCount: '{count} estacionamientos · deslizá o tocá para ajustar'
+    },
+    recommendations: {
+      best_value: 'Mejor relación precio-distancia',
+      lowest_total: 'Menor precio total',
+      closest: 'Más cercano',
+      highest_rating: 'Mejor puntuado (demo)',
+      low_availability: 'Pocos lugares (≤2)'
     },
     results: {
       title: 'Estacionamientos',
@@ -610,12 +826,16 @@ const I18N = {
       aria: 'Resultados de estacionamientos'
     },
     card: {
+      illustrativeLabel: 'Imagen ilustrativa',
+      photosCount: '{n} fotos',
       walkEst: '~{min} min est.',
       straightLine: '{km} km línea recta',
       spotsAvailable: '{avail} / {total} lugares',
       totalFor: 'Total {duration}',
+      avgHourly: '{rate}/h prom.',
       baseRate: '{rate}/h base',
       ratingDemo: '{count} reseñas · demo',
+      openDetail: 'Ver ficha',
       detailsShow: 'Ver detalles',
       detailsHide: 'Ocultar detalles',
       directionsDemo: 'Cómo llegar (ubicación demo)',
@@ -628,14 +848,77 @@ const I18N = {
       open24: 'Abierto 24 hs',
       hoursRange: '{open}–{close}',
       maxHeight: 'Máx. {h} m',
-      demoProvenanceNote: 'Calificación ({score}/5, {count} reseñas), servicios y disponibilidad son datos sintéticos de demostración (no provienen de Google ni de sensores reales).',
+      demoProvenanceNote: 'Calificación ({score}/5, {count} reseñas), imágenes ilustrativas, servicios y disponibilidad son datos sintéticos de demostración (no provienen de Google ni de sensores reales).',
       directionsDisclaimer: 'Navegación externa a coordenadas demo; no representa un garaje asociado real.',
       reserve: 'Reservar',
       noSpots: 'Sin cupos',
       incompatible: 'No compatible',
       outOfHours: 'Fuera de horario',
       notAccepted: 'No admite {vehicle}',
-      dynamicTag: 'Tarifa dinámica ×{mult}'
+      dynamicTag: 'Tarifa dinámica ×{mult}',
+      favAdd: 'Agregar a favoritos',
+      favRemove: 'Quitar de favoritos',
+      compareAdd: 'Comparar',
+      compareAdded: 'En comparador'
+    },
+    detail: {
+      expandGallery: 'Ampliar galería',
+      tabInfo: 'Info',
+      tabServices: 'Servicios',
+      tabPhotos: 'Fotos',
+      tabReviews: 'Reseñas',
+      tabLocation: 'Ubicación',
+      reviewsNotice: 'Reseñas sintéticas de demostración. No provienen de Google ni de clientes reales.',
+      reviewBadge: 'Reseña demo',
+      noReviews: 'Sin reseñas demo registradas para esta cochera QA.',
+      locationCoords: 'Coordenadas demo',
+      locationDistance: 'Distancia estimada desde destino',
+      priceTitle: 'Resumen tarifario del intervalo',
+      galleryTitle: 'Galería ilustrativa',
+      galleryPrev: 'Anterior',
+      galleryNext: 'Siguiente',
+      galleryCounter: '{cur} de {total} · Imagen ilustrativa (demo)'
+    },
+    compare: {
+      title: 'Comparar estacionamientos',
+      subtitle: 'Mismo intervalo y vehículo ({interval} · {vehicle})',
+      button: 'Comparar ({n}/3)',
+      clear: 'Limpiar',
+      limitReached: 'Podés comparar hasta 3 estacionamientos a la vez.',
+      needTwo: 'Elegí al menos 2 estacionamientos para comparar.',
+      rowPrice: 'Precio total',
+      rowAvg: 'Promedio por hora',
+      rowDistance: 'Distancia estimada',
+      rowRating: 'Puntuación (demo)',
+      rowCapacity: 'Cupo compatible',
+      rowHours: 'Horario operativo',
+      rowHeight: 'Altura máxima',
+      rowVehicles: 'Vehículos admitidos',
+      rowAction: 'Acción',
+      remove: 'Quitar'
+    },
+    favorites: {
+      title: 'Favoritos y recientes',
+      subtitle: 'Guardados localmente en este navegador para acceder en un toque.',
+      tabGarages: 'Estacionamientos ({n})',
+      tabDestinations: 'Destinos ({n})',
+      emptyGarages: 'Todavía no guardaste estacionamientos favoritos.',
+      emptyDestinations: 'Todavía no guardaste destinos favoritos.',
+      recentsHeading: 'Destinos recientes',
+      emptyRecents: 'Tus búsquedas recientes aparecerán acá.',
+      goToDest: 'Buscar aquí',
+      addedGarage: '{name} guardado en favoritos.',
+      removedGarage: '{name} quitado de favoritos.'
+    },
+    profile: {
+      title: 'Mi perfil y preferencias',
+      subtitle: 'Configuración local de la experiencia parkFinder (Sprint 2B).',
+      appearance: 'Apariencia visual',
+      appearanceDesc: 'Alterná manualmente entre modo claro y modo oscuro.',
+      language: 'Idioma de la aplicación',
+      languageDesc: 'Cambiá textos y formatos entre español e inglés.',
+      scopeTitle: 'Próximamente en Sprint 2C',
+      scopeDesc: 'Cuenta demo local, múltiples vehículos guardados, preferencias de pago y notificaciones, y métricas personales estarán disponibles en el próximo Sprint 2C. Hoy navegás libremente sin registro obligatorio.'
     },
     destLine: {
       zone: 'Zona seleccionada',
@@ -714,23 +997,23 @@ const I18N = {
     status: {
       title: 'Información técnica y panel QA',
       subtitle: 'Menú separado de la experiencia principal para transparencia de datos sintéticos, pruebas y simulación.',
-      functionalTitle: 'Implementado en alcance local (Sprint 1 + Sprint 2)',
-      f1: 'Disponibilidad por intervalo semiabierto [inicio, fin) en Buenos Aires (UTC-3), incluyendo estadías nocturnas y multidía (tope propuesto: 72 h) con validación horaria día por día.',
-      f2: 'Validación independiente de vehículo, altura máxima y horarios operativos; filtros combinados (servicios sí/no/sin informar, precio, puntuación demo, distancia) sin alterar elegibilidad.',
-      f3: 'Precios dinámicos por tramo horario (prorrateo sobre medianoche y fin de semana), redondeo único final en ARS y cotización congelada.',
+      functionalTitle: 'Implementado en alcance local (Sprint 1 + Sprint 2A + Sprint 2B)',
+      f1: 'Disponibilidad por intervalo semiabierto [inicio, fin) en Buenos Aires (UTC-3), estadías nocturnas/multidía (tope 72 h) y validación horaria día por día.',
+      f2: 'Identidad visual Urban Tech (parkFinder), tema claro/oscuro persistido, buscador progresivo con POIs/comercios/ubicación por permiso, favoritos y destinos recientes.',
+      f3: 'Precios dinámicos por tramo horario, redondeo único final en ARS, cotización congelada, recomendaciones inteligentes determinísticas y comparador hasta 3 cocheras.',
       f4: 'Revalidación previa a confirmar, prevención de doble envío, verificación durable de localStorage y cancelación auditable.',
-      f5: 'Navegación externa a Google Maps sin clave con coordenadas validadas (etiquetada como ubicación demo), interfaz de proveedor de mapa (OSM activo / Google propuesto) y modo sin conexión.',
+      f5: 'Navegación externa a Google Maps sin clave (ubicación demo), mapa híbrido 60/40 ajustable, panel inferior móvil desplegable y fallback offline.',
       simulatedTitle: 'Datos sintéticos y alcance simulado',
-      s1: 'Estacionamientos, capacidades, servicios, calificaciones (1–5) y reseñas son sintéticos de demostración; no provienen de Google Places ni de sensores en vivo.',
+      s1: 'Estacionamientos, capacidades, servicios, calificaciones (1–5), reseñas e ilustraciones SVG son sintéticos de demostración; no representan garajes reales ni provienen de Google Places.',
       s2: 'El pago y el QR SVG son simulados; no se activaron APIs pagas, facturación ni pasarelas reales.',
-      conceptualTitle: 'Limitaciones conocidas y política tarifaria propuesta',
-      c1: 'localStorage no sincroniza atomicidad entre distintas pestañas ni dispositivos (PF-12 requiere backend transaccional).',
-      c2: 'Las distancias son estimaciones en línea recta (Haversine, caminata ~5 km/h).',
-      note: 'Política tarifaria propuesta (sin cambios silenciosos): ventanas pico implementadas 08:00–10:00 y 17:00–20:00 (×1.15), fin de semana Sáb/Dom (×1.10), tope multidía 72 h — pendiente aprobación formal del equipo.',
+      conceptualTitle: 'Limitaciones conocidas y alcance futuro (Sprint 2C / Sprint 3)',
+      c1: 'localStorage no sincroniza atomicidad entre pestañas ni dispositivos (requiere backend transaccional PF-12).',
+      c2: 'Cuenta demo local, múltiples vehículos, extensión de reserva, exportación CSV y notificaciones in-app corresponden al Sprint 2C.',
+      note: 'Políticas propuestas (sin cambios silenciosos): ventanas pico 08–10 / 17–20 (×1.15), finde Sáb/Dom (×1.10), tope 72 h, score valor precio-distancia 50/50 y umbral baja disponibilidad ≤2 plazas.',
       qaTitle: 'Controles QA y simulación',
-      qaDesc: 'Activá el modo sin conexión, ejecutá la suite automatizada en memoria (Sprint 1 + Sprint 2) o probá el Sandbox aislado sin tocar tus reservas reales.',
+      qaDesc: 'Activá el modo sin conexión, ejecutá la suite automatizada en memoria (S1 + S2A + S2B) o probá el Sandbox aislado sin tocar tus reservas reales.',
       offlineToggle: 'Simular modo sin conexión (mapa y red caídos)',
-      qaRunBtn: 'Ejecutar suite QA (S1 + S2)',
+      qaRunBtn: 'Ejecutar suite QA (S1 + S2 + S2B)',
       qaSandboxBtn: 'Abrir Sandbox QA (cap. 1 y 2)',
       testBtn: 'Simular cochera llena',
       resetBtn: 'Restablecer reservas locales',
@@ -764,12 +1047,29 @@ const I18N = {
       minShort: 'min'
     },
     footer: {
-      text: '© 2026 ParkFinder · Buenos Aires (UTC-3) · Demo con inventario sintético y almacenamiento local',
+      text: '© 2026 parkFinder · Tu lugar, antes de llegar. · Buenos Aires (UTC-3) · Demo comercial con datos sintéticos locales',
       infoLink: 'Alcance técnico y panel QA'
     }
   },
   en: {
-    meta: { title: 'ParkFinder · Private parking in Buenos Aires' },
+    meta: { title: 'parkFinder · Your spot, before you arrive.' },
+    brand: { tagline: 'Your spot, before you arrive.' },
+    nav: {
+      aria: 'Primary navigation',
+      mobileAria: 'Mobile navigation',
+      explore: 'Explore',
+      bookingsShort: 'Bookings',
+      favorites: 'Favorites',
+      profile: 'Profile'
+    },
+    theme: {
+      dark: 'Dark',
+      light: 'Light',
+      switchToDark: 'Switch to dark mode',
+      switchToLight: 'Switch to light mode',
+      changedDark: 'Dark mode enabled.',
+      changedLight: 'Light mode enabled.'
+    },
     zone: {
       obeliso: 'Obelisco / Microcentro',
       puertomadero: 'Puerto Madero',
@@ -829,10 +1129,12 @@ const I18N = {
     },
     search: {
       title: 'Where are you parking?',
-      caption: 'Buenos Aires (UTC-3) · Demo availability and pricing',
+      mobilePrompt: 'Where are you going?',
+      whereLabel: 'Destination, address, POI or business',
+      caption: 'Buenos Aires (UTC-3) · Demo availability & pricing',
       destination: 'Area or neighborhood',
       address: 'Exact address (optional)',
-      addressPlaceholder: 'e.g. Av. Corrientes 1234, CABA',
+      addressPlaceholder: 'Where are you going? e.g. Teatro Colón, Abasto, Corrientes…',
       vehicle: 'Vehicle',
       checkIn: 'Check-in',
       checkOut: 'Check-out',
@@ -840,7 +1142,7 @@ const I18N = {
       departureDate: 'Departure date',
       arrival: 'Arrival time',
       departure: 'Departure time',
-      customZone: 'Custom address…',
+      customZone: 'Address / POI…',
       searchBtn: 'Search',
       searchingBtn: 'Searching…',
       editBtn: 'Edit',
@@ -848,10 +1150,27 @@ const I18N = {
       presetOvernight: 'Overnight',
       overnightLabel: 'Overnight · {dur}',
       searching: 'Searching “{address}”…',
-      aria: 'Parking search'
+      aria: 'Parking search',
+      useCurrentLoc: 'Use my current location (requires permission)',
+      groupFavorites: 'Favorite destinations',
+      groupRecents: 'Recent destinations',
+      groupZones: 'Neighborhoods & areas',
+      groupPois: 'Points of interest (demo catalog)',
+      groupBusinesses: 'Businesses & hubs (demo catalog)',
+      clearRecents: 'Clear',
+      geoDenied: 'Location permission denied. Continuing with local area / demo catalog.',
+      geoUnavailable: 'Could not obtain current location. Pick a destination from the demo catalog.',
+      geoSuccess: 'Current location applied as destination.',
+      currentLocLabel: 'My current location',
+      saveDestFav: 'Destination saved to favorites.',
+      removeDestFav: 'Destination removed from favorites.'
     },
     filters: {
       aria: 'Parking filters',
+      quickSortAria: 'Quick sort',
+      quickCheapest: 'Cheapest',
+      quickNearest: 'Nearest',
+      quickTopRated: 'Top rated',
       onlyAvailable: 'Available only',
       maxPrice: 'Max total price',
       anyPrice: 'Max price',
@@ -859,6 +1178,10 @@ const I18N = {
       anyRating: 'Rating (demo)',
       maxDistance: 'Max distance',
       anyDistance: 'Distance',
+      advancedBtn: 'Filters',
+      advancedTitle: 'Advanced filters',
+      advancedSub: 'Combine price, distance, demo rating and amenities without altering real eligibility.',
+      apply: 'Show {n} results',
       clear: 'Clear filters',
       clearCount: 'Clear ({n})'
     },
@@ -879,10 +1202,13 @@ const I18N = {
     map: {
       destination: 'Destination',
       garage: 'Parking',
+      availablePin: 'Available',
+      unavailablePin: 'Unavail.',
       distanceFootnote: 'Straight-line distance estimates · Demo locations',
       downTitle: 'Map unavailable',
       downText: 'Local list, filters, pricing and bookings keep working normally.',
       reserveFromMap: 'Book',
+      detailFromMap: 'Details',
       directionsShort: 'Directions (demo)',
       walkMeta: '~{min} min est. walk · {km} km (straight-line)',
       destPopup: 'Selected destination',
@@ -892,7 +1218,15 @@ const I18N = {
     },
     mobile: {
       showMap: 'Show map',
-      showList: 'Show list'
+      showList: 'Show list',
+      sheetCount: '{count} parking options · drag or tap to resize'
+    },
+    recommendations: {
+      best_value: 'Best price-distance value',
+      lowest_total: 'Lowest total price',
+      closest: 'Closest',
+      highest_rating: 'Top rated (demo)',
+      low_availability: 'Low availability (≤2)'
     },
     results: {
       title: 'Parking options',
@@ -909,12 +1243,16 @@ const I18N = {
       aria: 'Parking results'
     },
     card: {
+      illustrativeLabel: 'Illustrative image',
+      photosCount: '{n} photos',
       walkEst: '~{min} min walk est.',
       straightLine: '{km} km straight-line',
       spotsAvailable: '{avail} / {total} spots',
       totalFor: 'Total {duration}',
+      avgHourly: '{rate}/h avg.',
       baseRate: '{rate}/h base',
       ratingDemo: '{count} reviews · demo',
+      openDetail: 'Full details',
       detailsShow: 'View details',
       detailsHide: 'Hide details',
       directionsDemo: 'Directions (demo location)',
@@ -927,14 +1265,77 @@ const I18N = {
       open24: 'Open 24/7',
       hoursRange: '{open}–{close}',
       maxHeight: 'Max {h} m',
-      demoProvenanceNote: 'Rating ({score}/5, {count} reviews), amenities and availability are synthetic demo data (not sourced from Google or live sensors).',
+      demoProvenanceNote: 'Rating ({score}/5, {count} reviews), illustrative images, amenities and availability are synthetic demo data (not sourced from Google or live sensors).',
       directionsDisclaimer: 'External navigation to demo coordinates; does not imply an actual partner garage.',
       reserve: 'Book',
       noSpots: 'Full',
       incompatible: 'Incompatible',
       outOfHours: 'Closed / Out of hours',
       notAccepted: 'No {vehicle}',
-      dynamicTag: 'Dynamic ×{mult}'
+      dynamicTag: 'Dynamic ×{mult}',
+      favAdd: 'Add to favorites',
+      favRemove: 'Remove from favorites',
+      compareAdd: 'Compare',
+      compareAdded: 'Comparing'
+    },
+    detail: {
+      expandGallery: 'Expand gallery',
+      tabInfo: 'Info',
+      tabServices: 'Amenities',
+      tabPhotos: 'Photos',
+      tabReviews: 'Reviews',
+      tabLocation: 'Location',
+      reviewsNotice: 'Synthetic demonstration reviews. Not sourced from Google or real customers.',
+      reviewBadge: 'Demo review',
+      noReviews: 'No demo reviews recorded for this QA garage.',
+      locationCoords: 'Demo coordinates',
+      locationDistance: 'Estimated distance from destination',
+      priceTitle: 'Interval price summary',
+      galleryTitle: 'Illustrative gallery',
+      galleryPrev: 'Previous',
+      galleryNext: 'Next',
+      galleryCounter: '{cur} of {total} · Illustrative image (demo)'
+    },
+    compare: {
+      title: 'Compare parking garages',
+      subtitle: 'Same interval and vehicle ({interval} · {vehicle})',
+      button: 'Compare ({n}/3)',
+      clear: 'Clear',
+      limitReached: 'You can compare up to 3 garages at a time.',
+      needTwo: 'Select at least 2 garages to compare.',
+      rowPrice: 'Total price',
+      rowAvg: 'Average hourly',
+      rowDistance: 'Estimated distance',
+      rowRating: 'Rating (demo)',
+      rowCapacity: 'Compatible spots',
+      rowHours: 'Operating hours',
+      rowHeight: 'Max clearance',
+      rowVehicles: 'Accepted vehicles',
+      rowAction: 'Action',
+      remove: 'Remove'
+    },
+    favorites: {
+      title: 'Favorites & recents',
+      subtitle: 'Stored locally in this browser for one-tap access.',
+      tabGarages: 'Garages ({n})',
+      tabDestinations: 'Destinations ({n})',
+      emptyGarages: 'No favorite garages saved yet.',
+      emptyDestinations: 'No favorite destinations saved yet.',
+      recentsHeading: 'Recent destinations',
+      emptyRecents: 'Your recent searches will appear here.',
+      goToDest: 'Search here',
+      addedGarage: '{name} saved to favorites.',
+      removedGarage: '{name} removed from favorites.'
+    },
+    profile: {
+      title: 'Profile & preferences',
+      subtitle: 'Local parkFinder experience settings (Sprint 2B).',
+      appearance: 'Visual theme',
+      appearanceDesc: 'Manually switch between light and dark mode.',
+      language: 'Application language',
+      languageDesc: 'Switch interface copy and formatting between Spanish and English.',
+      scopeTitle: 'Coming next in Sprint 2C',
+      scopeDesc: 'Local demo account, multiple saved vehicles, payment & notification preferences, and personal analytics arrive in Sprint 2C. Browse freely today with no onboarding barrier.'
     },
     destLine: {
       zone: 'Selected area',
@@ -1013,23 +1414,23 @@ const I18N = {
     status: {
       title: 'Technical info & QA menu',
       subtitle: 'Separated from the main driver experience for synthetic data transparency, testing and simulation.',
-      functionalTitle: 'Implemented in local scope (Sprint 1 + Sprint 2)',
-      f1: 'Half-open [start, end) interval availability in Buenos Aires (UTC-3), including overnight and multi-day stays (proposed 72h cap) with per-day operating hours validation.',
-      f2: 'Independent vehicle, clearance height and operating hours checks; combined filters (yes/no/unknown amenities, price, demo rating, distance) without overriding eligibility.',
-      f3: 'Hourly-segment dynamic pricing (midnight & weekend proration), single final ARS rounding and locked quotes.',
+      functionalTitle: 'Implemented in local scope (Sprint 1 + Sprint 2A + Sprint 2B)',
+      f1: 'Half-open [start, end) interval availability in Buenos Aires (UTC-3), overnight/multi-day stays (72h cap) and per-day operating hours checks.',
+      f2: 'Urban Tech brand identity (parkFinder), persisted light/dark mode, progressive search (POIs, businesses, explicit geolocation, recents & favorites).',
+      f3: 'Hourly-segment dynamic pricing, single final ARS rounding, locked quotes, deterministic smart recommendations and up-to-3 garage comparator.',
       f4: 'Pre-confirmation revalidation, duplicate-submit guard, durable localStorage verification and auditable cancellation.',
-      f5: 'Keyless Google Maps external directions with validated coordinates (labelled demo location), map provider adapter (OSM active / Google proposed) and offline fallback.',
+      f5: 'Keyless Google Maps external directions (demo location), adjustable 60/40 hybrid map/list, mobile draggable bottom sheet and offline fallback.',
       simulatedTitle: 'Synthetic data & simulated scope',
-      s1: 'Garages, capacities, amenities, ratings (1–5) and reviews are synthetic demo data; not sourced from Google Places or live sensors.',
+      s1: 'Garages, capacities, amenities, ratings (1–5), reviews and SVG illustrations are synthetic demo data; not real partner garages or Google Places.',
       s2: 'Payments and SVG QR codes are simulated; no paid APIs, billing or live payment gateways are activated.',
-      conceptualTitle: 'Known limitations & proposed pricing policy',
-      c1: 'localStorage does not provide cross-tab or cross-device atomicity (PF-12 requires a transactional backend).',
-      c2: 'Distances are straight-line Haversine estimates (~5 km/h walking speed).',
-      note: 'Proposed pricing policy (no silent changes): implemented peak windows 08:00–10:00 and 17:00–20:00 (×1.15), Sat/Sun weekend (×1.10), 72h multi-day cap — pending team approval.',
+      conceptualTitle: 'Known limitations & upcoming scope (Sprint 2C / Sprint 3)',
+      c1: 'localStorage does not synchronize atomicity across tabs or devices (requires transactional backend PF-12).',
+      c2: 'Local demo account, multiple vehicles, booking extension, CSV export and in-app notification settings are scoped for Sprint 2C.',
+      note: 'Proposed policies (no silent changes): peak windows 08–10 / 17–20 (×1.15), Sat/Sun weekend (×1.10), 72h cap, 50/50 price-distance value score, and ≤2 free bays low availability threshold.',
       qaTitle: 'QA controls & simulation',
-      qaDesc: 'Toggle offline mode, run the in-memory QA suite (Sprint 1 + Sprint 2) or launch the isolated Sandbox without touching your real bookings.',
+      qaDesc: 'Toggle offline mode, run the in-memory QA suite (S1 + S2A + S2B) or launch the isolated Sandbox without touching your real bookings.',
       offlineToggle: 'Simulate offline mode (map & network unavailable)',
-      qaRunBtn: 'Run QA suite (S1 + S2)',
+      qaRunBtn: 'Run QA suite (S1 + S2 + S2B)',
       qaSandboxBtn: 'Open QA Sandbox (cap. 1 & 2)',
       testBtn: 'Simulate full garage',
       resetBtn: 'Reset local bookings',
@@ -1063,7 +1464,7 @@ const I18N = {
       minShort: 'min'
     },
     footer: {
-      text: '© 2026 ParkFinder · Buenos Aires (UTC-3) · Demo with synthetic inventory and browser-local storage',
+      text: '© 2026 parkFinder · Your spot, before you arrive. · Buenos Aires (UTC-3) · Commercial demo with synthetic local data',
       infoLink: 'Technical scope & QA panel'
     }
   }
@@ -1085,51 +1486,6 @@ function t(key, vars) {
   }
   return value;
 }
-
-function applyStaticTranslations() {
-  document.documentElement.lang = state.lang;
-  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (node) {
-    node.textContent = t(node.getAttribute('data-i18n'));
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-placeholder]'), function (node) {
-    node.setAttribute('placeholder', t(node.getAttribute('data-i18n-placeholder')));
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (node) {
-    node.setAttribute('aria-label', t(node.getAttribute('data-i18n-aria')));
-  });
-  Array.prototype.forEach.call(document.querySelectorAll('.lang-btn'), function (btn) {
-    const active = btn.getAttribute('data-lang') === state.lang;
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-  document.title = t('meta.title');
-  updateMobileViewButton();
-}
-
-function setLanguage(code) {
-  if (code !== 'es' && code !== 'en') return;
-  const reserveOpen = q('#reserveModal').classList.contains('show');
-  const currentPlate = reserveOpen && q('#plateInput') ? q('#plateInput').value : '';
-  state.lang = code;
-  lsPrefSet(LS.lang, code);
-  applyStaticTranslations();
-  if (state.zoneId && state.zoneId !== 'custom') {
-    state.destLabel = t('zone.' + state.zoneId);
-  }
-  renderResults(false);
-  if (q('#statusModal').classList.contains('show')) renderStatusModal();
-  if (reserveOpen && state.currentGarage) {
-    openReserveModal(state.currentGarage, true);
-    if (currentPlate && q('#plateInput')) q('#plateInput').value = currentPlate;
-  }
-  if (q('#successModal').classList.contains('show') && state.lastBooking) openSuccessModal(state.lastBooking);
-  updateBookingsCount();
-  if (q('#bookingsModal').classList.contains('show')) renderBookingsModal();
-  if (q('#qrModal').classList.contains('show') && state.qrBooking) openBookingQr(state.qrBooking);
-  toast(t('toast.langChanged'), 'ok');
-}
-
-/* ------------------------- Utilities ------------------------- */
 
 function q(selector, root) {
   return (root || document).querySelector(selector);
@@ -1196,7 +1552,7 @@ function toast(message, type) {
   node.textContent = message;
   node.className = 'toast show' + (type ? ' ' + type : '');
   clearTimeout(toast._timer);
-  toast._timer = setTimeout(function () { node.classList.remove('show'); }, 4200);
+  toast._timer = setTimeout(function () { node.classList.remove('show'); }, 4000);
 }
 
 function haversineKm(lat1, lng1, lat2, lng2) {
@@ -1226,7 +1582,17 @@ function amenityIconSvg(key) {
   return icons[key] || '';
 }
 
-/* ------------------------- Persistence (Ledger Single Source of Truth) ------------------------- */
+function recIconSvg(key) {
+  const icons = {
+    best_value: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.8 5.8 21 7 14 2 9.3 9 8.5 12 2Z"/></svg>',
+    lowest_total: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    closest: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+    highest_rating: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>'
+  };
+  return icons[key] || '';
+}
+
+/* ------------------------- Persistence Helpers ------------------------- */
 
 function getStorageBackend() {
   if (state.storageImplOverride) return state.storageImplOverride;
@@ -1237,16 +1603,27 @@ function lsPrefGet(key) {
   try {
     const s = getStorageBackend();
     return s ? s.getItem(key) : null;
-  } catch (err) {
-    return null;
-  }
+  } catch (err) { return null; }
 }
 
 function lsPrefSet(key, value) {
   try {
     const s = getStorageBackend();
     if (s) s.setItem(key, value);
-  } catch (err) { /* non-critical preference */ }
+  } catch (err) {}
+}
+
+function lsJsonGet(key, fallback) {
+  try {
+    const raw = lsPrefGet(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed != null ? parsed : fallback;
+  } catch (err) { return fallback; }
+}
+
+function lsJsonSet(key, val) {
+  lsPrefSet(key, JSON.stringify(val));
 }
 
 function activeBookingsKey() {
@@ -1261,6 +1638,11 @@ function getActiveGarages() {
   return state.sandboxMode ? SANDBOX_GARAGES : GARAGES;
 }
 
+function findGarageById(id) {
+  return getActiveGarages().find(function (g) { return g.id === id; }) ||
+    GARAGES.find(function (g) { return g.id === id; }) || null;
+}
+
 function getBookings() {
   const res = activeStorageAdapter().read();
   return res.ok ? res.data : [];
@@ -1271,15 +1653,232 @@ function getActiveConfirmedBookings(list) {
 }
 
 function updateBookingsCount() {
-  const btn = q('#bookingsBtn');
-  if (!btn) return;
   const list = getBookings();
   state.bookings = list;
   const activeCount = getActiveConfirmedBookings(list).length;
-  btn.textContent = t('header.bookingsBtn', { n: activeCount });
+  const lbl = q('#bookingsBtnLabel');
+  if (lbl) lbl.textContent = t('header.bookingsBtn', { n: activeCount });
+  const mbn = q('#mbnBookingsCount');
+  if (mbn) {
+    mbn.textContent = String(activeCount);
+    mbn.hidden = activeCount === 0;
+  }
 }
 
-/* ------------------------- Geocoding + Offline Fallback ------------------------- */
+function updateFavoritesCount() {
+  const total = state.favoriteGarageIds.length + state.favoriteDestinations.length;
+  const badge = q('#favoritesCountBadge');
+  if (badge) badge.textContent = String(total);
+  const mbn = q('#mbnFavoritesCount');
+  if (mbn) {
+    mbn.textContent = String(total);
+    mbn.hidden = total === 0;
+  }
+  updateFavDestButton();
+}
+
+/* ------------------------- Light / Dark Theme ------------------------- */
+
+function applyTheme(theme, silent) {
+  state.theme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  lsPrefSet(LS.theme, state.theme);
+
+  const btn = q('#themeToggleBtn');
+  const icon = q('#themeToggleIcon');
+  const label = q('#themeToggleLabel');
+  const isDark = state.theme === 'dark';
+
+  if (btn) {
+    btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+    btn.setAttribute('aria-label', isDark ? t('theme.switchToLight') : t('theme.switchToDark'));
+  }
+  if (icon) {
+    icon.innerHTML = isDark
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';
+  }
+  if (label) {
+    label.textContent = isDark ? t('theme.light') : t('theme.dark');
+  }
+  if (!silent) {
+    toast(isDark ? t('theme.changedDark') : t('theme.changedLight'), 'ok');
+  }
+}
+
+function toggleTheme() {
+  applyTheme(state.theme === 'dark' ? 'light' : 'dark', false);
+  if (q('#profileModal').classList.contains('show')) renderProfileModal();
+}
+
+/* ------------------------- i18n Application ------------------------- */
+
+function applyStaticTranslations() {
+  document.documentElement.lang = state.lang;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (node) {
+    node.textContent = t(node.getAttribute('data-i18n'));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-placeholder]'), function (node) {
+    node.setAttribute('placeholder', t(node.getAttribute('data-i18n-placeholder')));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (node) {
+    node.setAttribute('aria-label', t(node.getAttribute('data-i18n-aria')));
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.lang-btn'), function (btn) {
+    const active = btn.getAttribute('data-lang') === state.lang;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  document.title = t('meta.title');
+  applyTheme(state.theme, true);
+  updateMobileViewButton();
+}
+
+function setLanguage(code) {
+  if (code !== 'es' && code !== 'en') return;
+  const reserveOpen = q('#reserveModal').classList.contains('show');
+  const currentPlate = reserveOpen && q('#plateInput') ? q('#plateInput').value : '';
+  state.lang = code;
+  lsPrefSet(LS.lang, code);
+  applyStaticTranslations();
+  if (state.zoneId && state.zoneId !== 'custom' && ZONE_MAP[state.zoneId]) {
+    state.destLabel = t('zone.' + state.zoneId);
+  }
+  renderResults(false);
+  renderCompareBar();
+  if (state.detailGarageId) renderDetailPanel();
+  if (q('#statusModal').classList.contains('show')) renderStatusModal();
+  if (q('#compareModal').classList.contains('show')) renderCompareModal();
+  if (q('#favoritesModal').classList.contains('show')) renderFavoritesModal();
+  if (q('#profileModal').classList.contains('show')) renderProfileModal();
+  if (q('#advancedFiltersModal').classList.contains('show')) renderAdvancedFiltersModal();
+  if (reserveOpen && state.currentGarage) {
+    openReserveModal(state.currentGarage, true);
+    if (currentPlate && q('#plateInput')) q('#plateInput').value = currentPlate;
+  }
+  if (q('#successModal').classList.contains('show') && state.lastBooking) openSuccessModal(state.lastBooking);
+  updateBookingsCount();
+  if (q('#bookingsModal').classList.contains('show')) renderBookingsModal();
+  if (q('#qrModal').classList.contains('show') && state.qrBooking) openBookingQr(state.qrBooking);
+  toast(t('toast.langChanged'), 'ok');
+}
+
+/* ------------------------- Favorites & Recent Destinations ------------------------- */
+
+function loadUserPreferences() {
+  state.favoriteGarageIds = lsJsonGet(LS.favGarages, []);
+  if (!Array.isArray(state.favoriteGarageIds)) state.favoriteGarageIds = [];
+  state.favoriteDestinations = lsJsonGet(LS.favDestinations, []);
+  if (!Array.isArray(state.favoriteDestinations)) state.favoriteDestinations = [];
+  state.recentDestinations = lsJsonGet(LS.recentDestinations, []);
+  if (!Array.isArray(state.recentDestinations)) state.recentDestinations = [];
+
+  const savedSplit = Number(lsPrefGet(LS.splitPct));
+  if (Number.isFinite(savedSplit) && savedSplit >= 30 && savedSplit <= 65) {
+    state.splitPct = savedSplit;
+  }
+  updateFavoritesCount();
+}
+
+function isFavoriteGarage(garageId) {
+  return state.favoriteGarageIds.indexOf(garageId) !== -1;
+}
+
+function toggleFavoriteGarage(garageId) {
+  const garage = findGarageById(garageId);
+  const idx = state.favoriteGarageIds.indexOf(garageId);
+  if (idx >= 0) {
+    state.favoriteGarageIds.splice(idx, 1);
+    if (garage) toast(t('favorites.removedGarage', { name: garage.name }), 'ok');
+  } else {
+    state.favoriteGarageIds.unshift(garageId);
+    if (garage) toast(t('favorites.addedGarage', { name: garage.name }), 'ok');
+  }
+  lsJsonSet(LS.favGarages, state.favoriteGarageIds);
+  updateFavoritesCount();
+  renderResults(false);
+  if (state.detailGarageId === garageId) renderDetailPanel();
+  if (q('#favoritesModal').classList.contains('show')) renderFavoritesModal();
+}
+
+function isFavoriteDestination(label) {
+  const norm = Core.normalizeSearchText(label);
+  return state.favoriteDestinations.some(function (d) {
+    return Core.normalizeSearchText(d.label) === norm;
+  });
+}
+
+function toggleFavoriteDestination(destObj) {
+  const target = destObj || (state.destCoords ? {
+    id: 'fav-' + Date.now(),
+    label: state.destLabel || t('zone.obeliso'),
+    coords: state.destCoords.slice(),
+    zoneId: state.zoneId !== 'custom' ? state.zoneId : undefined,
+    type: 'favorite'
+  } : null);
+  if (!target || !target.label || !Array.isArray(target.coords)) return;
+
+  const norm = Core.normalizeSearchText(target.label);
+  const idx = state.favoriteDestinations.findIndex(function (d) {
+    return Core.normalizeSearchText(d.label) === norm;
+  });
+  if (idx >= 0) {
+    state.favoriteDestinations.splice(idx, 1);
+    toast(t('search.removeDestFav'), 'ok');
+  } else {
+    state.favoriteDestinations.unshift({
+      id: target.id || 'fav-' + Date.now(),
+      label: target.label,
+      coords: target.coords.slice(),
+      zoneId: target.zoneId,
+      type: 'favorite'
+    });
+    toast(t('search.saveDestFav'), 'ok');
+  }
+  lsJsonSet(LS.favDestinations, state.favoriteDestinations);
+  updateFavoritesCount();
+  if (!q('#destDropdown').hidden) renderDestDropdown();
+  if (q('#favoritesModal').classList.contains('show')) renderFavoritesModal();
+}
+
+function updateFavDestButton() {
+  const btn = q('#favDestBtn');
+  if (!btn) return;
+  const fav = isFavoriteDestination(state.destLabel);
+  btn.classList.toggle('is-fav', fav);
+  btn.setAttribute('aria-pressed', fav ? 'true' : 'false');
+  const poly = btn.querySelector('polygon');
+  if (poly) poly.setAttribute('fill', fav ? 'currentColor' : 'none');
+}
+
+function recordRecentDestination(label, coords, zoneId) {
+  if (!label || !Array.isArray(coords) || coords.length !== 2) return;
+  const norm = Core.normalizeSearchText(label);
+  state.recentDestinations = state.recentDestinations.filter(function (r) {
+    return Core.normalizeSearchText(r.label) !== norm;
+  });
+  state.recentDestinations.unshift({
+    id: 'rec-' + Date.now(),
+    label: label,
+    coords: [Number(coords[0]), Number(coords[1])],
+    zoneId: zoneId && zoneId !== 'custom' ? zoneId : undefined,
+    type: 'recent',
+    timestamp: new Date().toISOString()
+  });
+  if (state.recentDestinations.length > 6) {
+    state.recentDestinations = state.recentDestinations.slice(0, 6);
+  }
+  lsJsonSet(LS.recentDestinations, state.recentDestinations);
+}
+
+function clearRecentDestinations() {
+  state.recentDestinations = [];
+  lsJsonSet(LS.recentDestinations, []);
+  if (!q('#destDropdown').hidden) renderDestDropdown();
+  if (q('#favoritesModal').classList.contains('show')) renderFavoritesModal();
+}
+
+/* ------------------------- Progressive Destination Search & Geolocation ------------------------- */
 
 function loadZoneCache() {
   let cache = {};
@@ -1294,30 +1893,42 @@ function saveZoneCache(cache) {
 async function geocodeAddress(rawAddress) {
   const address = String(rawAddress || '').trim();
   if (!address) return null;
-  const key = address.toLowerCase();
-  const cache = loadZoneCache();
+  const norm = Core.normalizeSearchText(address);
 
-  if (Array.isArray(cache[key]) && cache[key].length === 2) {
-    return [Number(cache[key][0]), Number(cache[key][1])];
+  // 1. Check demo destination catalog first (offline-first, instant, zero paid APIs)
+  const catalogHits = Core.searchDestinations(address, {
+    favorites: state.favoriteDestinations,
+    recents: state.recentDestinations,
+    limit: 1
+  });
+  if (catalogHits.length > 0 && Core.normalizeSearchText(catalogHits[0].label) === norm) {
+    return catalogHits[0].coords.slice();
   }
 
+  const zoneFallback = FALLBACK_COORDS[norm];
+  if (Array.isArray(zoneFallback)) return zoneFallback.slice();
+
+  // 2. Cached Nominatim result
+  const cache = loadZoneCache();
+  if (Array.isArray(cache[norm]) && cache[norm].length === 2) {
+    return [Number(cache[norm][0]), Number(cache[norm][1])];
+  }
+
+  // 3. Free OSM Nominatim lookup when online
   if (!state.offline && typeof fetch === 'function') {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(function () { controller.abort(); }, 6000);
-      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=es&q=' +
-        encodeURIComponent(address);
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: { Accept: 'application/json' }
-      });
+      const timer = setTimeout(function () { controller.abort(); }, 5000);
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=' +
+        encodeURIComponent(state.lang) + '&q=' + encodeURIComponent(address + ', Buenos Aires, Argentina');
+      const response = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
       clearTimeout(timer);
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data) && data[0]) {
           const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
           if (Core.isValidCoordinates(coords[0], coords[1])) {
-            cache[key] = coords;
+            cache[norm] = coords;
             saveZoneCache(cache);
             return coords;
           }
@@ -1326,12 +1937,176 @@ async function geocodeAddress(rawAddress) {
     } catch (err) { /* fallback below */ }
   }
 
-  const zoneFallback = FALLBACK_COORDS[key];
-  if (Array.isArray(zoneFallback)) return zoneFallback.slice();
+  // 4. Partial catalog match fallback (works 100% offline)
+  if (catalogHits.length > 0) {
+    return catalogHits[0].coords.slice();
+  }
   return null;
 }
 
-/* ------------------------- Form, Filters & Validation ------------------------- */
+function selectDestinationEntry(entry) {
+  if (!entry || !Array.isArray(entry.coords)) return;
+  closeDestDropdown();
+  state.destCoords = [Number(entry.coords[0]), Number(entry.coords[1])];
+  state.destLabel = entry.label;
+  if (entry.zoneId && ZONE_MAP[entry.zoneId]) {
+    state.zoneId = entry.zoneId;
+    q('#zoneSel').value = entry.zoneId;
+    q('#customAddr').value = '';
+  } else {
+    state.zoneId = 'custom';
+    q('#zoneSel').value = 'custom';
+    q('#customAddr').value = entry.label;
+  }
+  recordRecentDestination(entry.label, state.destCoords, state.zoneId);
+  updateFavDestButton();
+  setMobileSearchExpanded(false);
+  renderResults(true);
+}
+
+function requestCurrentLocation() {
+  closeDestDropdown();
+  if (!navigator.geolocation || typeof navigator.geolocation.getCurrentPosition !== 'function') {
+    toast(t('search.geoUnavailable'), 'warn');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      const lat = pos && pos.coords ? Number(pos.coords.latitude) : NaN;
+      const lng = pos && pos.coords ? Number(pos.coords.longitude) : NaN;
+      if (!Core.isValidCoordinates(lat, lng)) {
+        toast(t('search.geoUnavailable'), 'warn');
+        return;
+      }
+      state.zoneId = 'custom';
+      q('#zoneSel').value = 'custom';
+      state.destCoords = [lat, lng];
+      state.destLabel = t('search.currentLocLabel');
+      q('#customAddr').value = state.destLabel;
+      recordRecentDestination(state.destLabel, state.destCoords, 'custom');
+      updateFavDestButton();
+      setMobileSearchExpanded(false);
+      renderResults(true);
+      toast(t('search.geoSuccess'), 'ok');
+    },
+    function (err) {
+      const denied = err && err.code === 1;
+      toast(denied ? t('search.geoDenied') : t('search.geoUnavailable'), 'warn');
+    },
+    { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
+  );
+}
+
+function renderDestDropdown() {
+  const dd = q('#destDropdown');
+  const input = q('#customAddr');
+  if (!dd || !input) return;
+
+  const query = input.value || '';
+  const items = Core.searchDestinations(query, {
+    favorites: state.favoriteDestinations,
+    recents: state.recentDestinations,
+    limit: 12
+  });
+
+  const groupsOrder = ['favorite', 'recent', 'zone', 'poi', 'business'];
+  const groupTitles = {
+    favorite: t('search.groupFavorites'),
+    recent: t('search.groupRecents'),
+    zone: t('search.groupZones'),
+    poi: t('search.groupPois'),
+    business: t('search.groupBusinesses')
+  };
+
+  let html =
+    '<button type="button" class="dd-geo-btn" id="geoLocationBtn">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>' +
+      '<span>' + escapeHtml(t('search.useCurrentLoc')) + '</span>' +
+    '</button>';
+
+  groupsOrder.forEach(function (gKey) {
+    const groupItems = items.filter(function (x) { return x.group === gKey; });
+    if (groupItems.length === 0) return;
+
+    html += '<div class="dd-group-title"><span>' + escapeHtml(groupTitles[gKey]) + '</span>' +
+      (gKey === 'recent' ? '<button type="button" class="dd-clear-recents" id="ddClearRecents">' + escapeHtml(t('search.clearRecents')) + '</button>' : '') +
+    '</div>';
+
+    groupItems.forEach(function (item, idx) {
+      const sub = state.lang === 'en' ? (item.subtitleEn || item.subtitleEs || '') : (item.subtitleEs || item.subtitleEn || '');
+      const fav = isFavoriteDestination(item.label);
+      const icon = gKey === 'favorite' ? '★' : (gKey === 'recent' ? '↺' : (gKey === 'poi' ? '◎' : (gKey === 'business' ? '◈' : '⌖')));
+      html +=
+        '<div class="dd-item" role="option" tabindex="0" data-dd-idx="' + gKey + '-' + idx + '">' +
+          '<span class="dd-item-icon" aria-hidden="true">' + icon + '</span>' +
+          '<span class="dd-item-body">' +
+            '<span class="dd-item-label">' + escapeHtml(item.label) + '</span>' +
+            (sub ? '<span class="dd-item-sub">' + escapeHtml(sub) + '</span>' : '') +
+          '</span>' +
+          '<button type="button" class="dd-item-fav' + (fav ? ' is-fav' : '') + '" data-dd-fav="' + gKey + '-' + idx + '" aria-label="' + escapeHtml(fav ? t('search.removeDestFav') : t('search.saveDestFav')) + '">' +
+            (fav ? '★' : '☆') +
+          '</button>' +
+        '</div>';
+    });
+  });
+
+  dd.innerHTML = html;
+  dd._itemMap = {};
+  groupsOrder.forEach(function (gKey) {
+    items.filter(function (x) { return x.group === gKey; }).forEach(function (item, idx) {
+      dd._itemMap[gKey + '-' + idx] = item;
+    });
+  });
+
+  const geoBtn = q('#geoLocationBtn', dd);
+  if (geoBtn) geoBtn.addEventListener('click', requestCurrentLocation);
+  const clearRec = q('#ddClearRecents', dd);
+  if (clearRec) clearRec.addEventListener('click', function (ev) {
+    ev.stopPropagation();
+    clearRecentDestinations();
+  });
+
+  Array.prototype.forEach.call(dd.querySelectorAll('.dd-item'), function (row) {
+    const key = row.getAttribute('data-dd-idx');
+    const entry = dd._itemMap[key];
+    row.addEventListener('click', function (ev) {
+      if (ev.target.closest('.dd-item-fav')) return;
+      selectDestinationEntry(entry);
+    });
+    row.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        selectDestinationEntry(entry);
+      }
+    });
+  });
+
+  Array.prototype.forEach.call(dd.querySelectorAll('.dd-item-fav'), function (btn) {
+    btn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      const entry = dd._itemMap[btn.getAttribute('data-dd-fav')];
+      toggleFavoriteDestination(entry);
+    });
+  });
+}
+
+function openDestDropdown() {
+  const dd = q('#destDropdown');
+  const input = q('#customAddr');
+  if (!dd || !input) return;
+  renderDestDropdown();
+  dd.hidden = false;
+  input.setAttribute('aria-expanded', 'true');
+}
+
+function closeDestDropdown() {
+  const dd = q('#destDropdown');
+  const input = q('#customAddr');
+  if (dd) dd.hidden = true;
+  if (input) input.setAttribute('aria-expanded', 'false');
+}
+
+/* ------------------------- Form, Filters & Quick Sort ------------------------- */
 
 function countActiveFilters() {
   let count = 0;
@@ -1353,6 +2128,12 @@ function syncFilterUi() {
     btn.classList.toggle('is-active', active);
   });
 
+  Array.prototype.forEach.call(document.querySelectorAll('.quick-sort-btn'), function (btn) {
+    const active = btn.getAttribute('data-quick-sort') === state.sort;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+
   const maxPriceEl = q('#maxPriceFilter');
   const minRatingEl = q('#minRatingFilter');
   const maxDistEl = q('#maxDistanceFilter');
@@ -1360,11 +2141,15 @@ function syncFilterUi() {
   if (minRatingEl) minRatingEl.classList.toggle('has-value', !!state.filters.minRating);
   if (maxDistEl) maxDistEl.classList.toggle('has-value', !!state.filters.maxDistanceKm);
 
-  const clearBtn = q('#clearFiltersBtn');
   const n = countActiveFilters();
+  const clearBtn = q('#clearFiltersBtn');
   if (clearBtn) {
     clearBtn.hidden = n === 0;
     clearBtn.textContent = n > 0 ? t('filters.clearCount', { n: n }) : t('filters.clear');
+  }
+  const advLbl = q('#advancedFiltersLabel');
+  if (advLbl) {
+    advLbl.textContent = n > 0 ? (t('filters.advancedBtn') + ' (' + n + ')') : t('filters.advancedBtn');
   }
 }
 
@@ -1377,6 +2162,7 @@ function clearFilters(silent) {
   if (q('#maxDistanceFilter')) q('#maxDistanceFilter').value = '';
   syncFilterUi();
   renderResults(false);
+  if (q('#advancedFiltersModal').classList.contains('show')) renderAdvancedFiltersModal();
   if (!silent) toast(t('toast.filtersCleared'), 'ok');
 }
 
@@ -1386,7 +2172,6 @@ function syncDepartureDateOnArrivalChange() {
   if (!arrEl || !depEl) return;
   const nextArr = (arrEl.value || '').trim();
   const curDep = (depEl.value || '').trim();
-  // Sync departure date automatically if user hasn't picked a distinct multi-day date or if arrival > departure
   if (!curDep || curDep === state.lastSyncedArrivalDate || (nextArr && curDep < nextArr)) {
     depEl.value = nextArr;
   }
@@ -1475,6 +2260,7 @@ function updateDestLine() {
       ? formatIntervalLabel(state.interval) + ' · ' + t('vehicle.' + state.vehicleType)
       : t('results.invalidTitle');
   }
+  updateFavDestButton();
 
   if (!line) return;
   const fallbackBadge = state.offline
@@ -1488,31 +2274,21 @@ function updateDestLine() {
     '<strong>' + escapeHtml(destText) + '</strong>' +
     ' · ' + timeInfo +
     ' · <strong>' + escapeHtml(t('vehicle.' + state.vehicleType)) + '</strong>' +
-    ' · <span>' + escapeHtml(t('destLine.tz')) + '</span>' +
     fallbackBadge;
 }
 
 function reasonMessage(evalRes) {
   if (!evalRes) return '';
   if (evalRes.reasonCode === 'OUT_OF_HOURS') {
-    return t('validation.OUT_OF_HOURS', {
-      open: evalRes.hoursCheck.open,
-      close: evalRes.hoursCheck.close
-    });
+    return t('validation.OUT_OF_HOURS', { open: evalRes.hoursCheck.open, close: evalRes.hoursCheck.close });
   }
   if (evalRes.reasonCode === 'VEHICLE_TYPE_NOT_ACCEPTED') {
-    return t('validation.VEHICLE_TYPE_NOT_ACCEPTED', {
-      vehicle: t('vehicle.' + state.vehicleType)
-    });
+    return t('validation.VEHICLE_TYPE_NOT_ACCEPTED', { vehicle: t('vehicle.' + state.vehicleType) });
   }
   if (evalRes.reasonCode === 'HEIGHT_EXCEEDS_CLEARANCE') {
-    return t('validation.HEIGHT_EXCEEDS_CLEARANCE', {
-      max: Number(evalRes.vehicleCheck.maxHeightM).toFixed(2)
-    });
+    return t('validation.HEIGHT_EXCEEDS_CLEARANCE', { max: Number(evalRes.vehicleCheck.maxHeightM).toFixed(2) });
   }
-  return t('validation.' + evalRes.reasonCode, {
-    max: Core.MAX_DURATION_HOURS
-  });
+  return t('validation.' + evalRes.reasonCode, { max: Core.MAX_DURATION_HOURS });
 }
 
 function applyPreset(presetKey) {
@@ -1543,7 +2319,55 @@ function applyPreset(presetKey) {
   renderResults(false);
 }
 
-/* ------------------------- Results & Cards ------------------------- */
+/* ------------------------- Smart Recommendations Strip ------------------------- */
+
+function renderRecommendationsStrip() {
+  const strip = q('#recommendationsStrip');
+  if (!strip) return;
+  const rec = state.recommendations;
+  if (!rec || rec.eligibleCount === 0) {
+    strip.hidden = true;
+    strip.innerHTML = '';
+    return;
+  }
+
+  const slots = [
+    { key: 'best_value', id: rec.bestValue },
+    { key: 'lowest_total', id: rec.lowestTotal },
+    { key: 'closest', id: rec.closest },
+    { key: 'highest_rating', id: rec.highestRating }
+  ].filter(function (s) { return !!s.id; });
+
+  strip.hidden = slots.length === 0;
+  strip.innerHTML = slots.map(function (slot) {
+    const g = findGarageById(slot.id);
+    if (!g) return '';
+    const ev = state.evaluations[g.id];
+    const km = distanceTo(g);
+    const price = ev && ev.quote ? formatArs(ev.quote.totalArs) : formatArs(g.ratePerHour);
+    const rating = Core.getGarageRating(g);
+    const meta = slot.key === 'highest_rating'
+      ? ('★ ' + rating.score.toFixed(1) + ' · ' + price)
+      : (price + ' · ' + km.toFixed(2) + ' km');
+    return '<button type="button" class="rec-pill" data-rec-key="' + slot.key + '" data-rec-garage="' + escapeHtml(g.id) + '">' +
+      '<span class="rec-pill-icon">' + recIconSvg(slot.key) + '</span>' +
+      '<span class="rec-pill-body">' +
+        '<span class="rec-pill-kicker">' + escapeHtml(t('recommendations.' + slot.key)) + '</span>' +
+        '<span class="rec-pill-name">' + escapeHtml(g.name) + '</span>' +
+        '<span class="rec-pill-meta">' + escapeHtml(meta) + '</span>' +
+      '</span>' +
+    '</button>';
+  }).join('');
+
+  Array.prototype.forEach.call(strip.querySelectorAll('.rec-pill'), function (btn) {
+    btn.addEventListener('click', function () {
+      const gid = btn.getAttribute('data-rec-garage');
+      focusGarageFromSync(gid, true);
+    });
+  });
+}
+
+/* ------------------------- Results & Commercial Cards ------------------------- */
 
 function distanceTo(garage) {
   if (!state.destCoords) return 0;
@@ -1560,6 +2384,12 @@ function buildAmenitiesMatrixHtml(garage) {
   }).join('') + '</div>';
 }
 
+function getGarageHeroImage(garage) {
+  if (garage && garage.mainImage) return garage.mainImage;
+  if (garage && Array.isArray(garage.gallery) && garage.gallery[0]) return garage.gallery[0].src;
+  return 'assets/garages/obelisco-main.svg';
+}
+
 function buildCard(garage, evalRes) {
   const avail = evalRes.availability.availableSpaces;
   const km = state.destCoords ? distanceTo(garage) : null;
@@ -1569,29 +2399,37 @@ function buildCard(garage, evalRes) {
   const rating = Core.getGarageRating(garage);
   const directionsUrl = MapProviderRegistry.getActive().buildDirectionsUrl(garage);
   const isExpanded = !!state.expandedDetails[garage.id];
+  const isFav = isFavoriteGarage(garage.id);
+  const isComparing = state.compareIds.indexOf(garage.id) !== -1;
+  const isSelected = state.selectedGarageId === garage.id;
+  const avgHourly = Core.getAverageHourlyRate(quote, garage.ratePerHour);
+
+  const recTags = (state.recommendations && state.recommendations.byGarageId[garage.id]) || [];
+  const visibleRecTags = recTags.slice(0, 2);
 
   const card = document.createElement('article');
-  card.className = 'card' + (!eligible ? ' unavailable' : '');
+  card.className = 'card' + (!eligible ? ' unavailable' : '') + (isSelected ? ' is-selected' : '');
   card.setAttribute('data-garage', garage.id);
   card.setAttribute('data-eligible', eligible ? 'true' : 'false');
   card.setAttribute('data-reason', evalRes.reasonCode);
 
+  const lockIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
   let statusIndicatorHtml = '';
   let btnLabel = t('card.reserve');
   if (evalRes.reasonCode === 'OUT_OF_HOURS') {
-    statusIndicatorHtml = '<span class="badge badge-danger">' + escapeHtml(t('card.outOfHours')) + '</span>';
+    statusIndicatorHtml = '<span class="badge badge-danger">' + lockIcon + ' ' + escapeHtml(t('card.outOfHours')) + '</span>';
     btnLabel = t('card.outOfHours');
   } else if (evalRes.reasonCode === 'VEHICLE_TYPE_NOT_ACCEPTED') {
-    statusIndicatorHtml = '<span class="badge badge-danger">' + escapeHtml(t('card.notAccepted', { vehicle: t('vehicle.' + state.vehicleType) })) + '</span>';
+    statusIndicatorHtml = '<span class="badge badge-danger">' + lockIcon + ' ' + escapeHtml(t('card.notAccepted', { vehicle: t('vehicle.' + state.vehicleType) })) + '</span>';
     btnLabel = t('card.incompatible');
   } else if (evalRes.reasonCode === 'HEIGHT_EXCEEDS_CLEARANCE') {
-    statusIndicatorHtml = '<span class="badge badge-danger">' + escapeHtml(t('card.maxHeight', { h: garage.maxHeightM.toFixed(2) })) + '</span>';
+    statusIndicatorHtml = '<span class="badge badge-danger">' + lockIcon + ' ' + escapeHtml(t('card.maxHeight', { h: garage.maxHeightM.toFixed(2) })) + '</span>';
     btnLabel = t('card.incompatible');
   } else if (avail === 0) {
-    statusIndicatorHtml = '<span class="badge badge-simulado">' + escapeHtml(t('card.noSpots')) + '</span>';
+    statusIndicatorHtml = '<span class="badge badge-unavail">' + lockIcon + ' ' + escapeHtml(t('card.noSpots')) + '</span>';
     btnLabel = t('card.noSpots');
   } else {
-    const dotClass = avail <= 3 ? 'avail-dot is-warn' : 'avail-dot';
+    const dotClass = avail <= 2 ? 'avail-dot is-warn' : 'avail-dot';
     statusIndicatorHtml = '<span class="metric-item"><i class="' + dotClass + '" aria-hidden="true"></i><strong>' +
       escapeHtml(t('card.spotsAvailable', { avail: avail, total: garage.totalSpaces })) + '</strong></span>';
   }
@@ -1636,69 +2474,126 @@ function buildCard(garage, evalRes) {
         ' <span class="muted">· ' + escapeHtml(t('card.straightLine', { km: km.toFixed(2) })) + '</span>' +
       '</span>';
 
+  const recBadgesHtml = visibleRecTags.length > 0
+    ? '<div class="card-rec-badges">' + visibleRecTags.map(function (rk) {
+        return '<span class="rec-chip' + (rk === 'low_availability' ? ' is-warn' : '') + '" data-rec-badge="' + rk + '">' +
+          escapeHtml(t('recommendations.' + rk)) + '</span>';
+      }).join('') + '</div>'
+    : '';
+
+  const galleryCount = Array.isArray(garage.gallery) && garage.gallery.length > 0 ? garage.gallery.length : 1;
   const detailsId = 'details-' + garage.id;
 
   card.innerHTML =
-    '<div class="card-top">' +
-      '<div class="card-identity">' +
-        '<h3>' + escapeHtml(garage.name) + '</h3>' +
-        '<div class="addr">' + escapeHtml(garage.address) + '</div>' +
-        ratingHtml +
-      '</div>' +
-      '<div class="price">' +
-        '<strong>' + (quote ? formatArs(quote.totalArs) : formatArs(garage.ratePerHour)) + '</strong>' +
-        '<span>' + escapeHtml(t('card.totalFor', { duration: durationLabel })) + '</span>' +
-        '<span class="price-base">' + escapeHtml(t('card.baseRate', { rate: formatArs(garage.ratePerHour) })) + '</span>' +
-      '</div>' +
-    '</div>' +
-
-    '<div class="stats">' +
-      walkHtml +
-      statusIndicatorHtml +
-    '</div>' +
-
-    '<div class="tags">' +
-      essentialPillsHtml +
-      dynamicBadgeHtml +
-    '</div>' +
-
-    '<div class="card-foot">' +
-      '<div class="card-links">' +
-        '<button type="button" class="link-btn btn-toggle-details" data-toggle-details="' + escapeHtml(garage.id) + '" aria-expanded="' + (isExpanded ? 'true' : 'false') + '" aria-controls="' + escapeHtml(detailsId) + '">' +
-          escapeHtml(isExpanded ? t('card.detailsHide') : t('card.detailsShow')) +
+    '<div class="card-media" data-open-detail="' + escapeHtml(garage.id) + '">' +
+      '<img src="' + escapeHtml(getGarageHeroImage(garage)) + '" alt="' + escapeHtml(garage.name + ' — ' + t('card.illustrativeLabel')) + '" loading="lazy" />' +
+      '<div class="card-media-overlay"></div>' +
+      recBadgesHtml +
+      '<span class="illustrative-badge" data-illustrative-label="true">' + escapeHtml(t('card.illustrativeLabel')) + '</span>' +
+      '<span class="card-photo-count">' + escapeHtml(t('card.photosCount', { n: galleryCount })) + '</span>' +
+      '<div class="card-media-actions">' +
+        '<button type="button" class="card-icon-pill' + (isComparing ? ' is-compare' : '') + '" data-compare-garage="' + escapeHtml(garage.id) + '" aria-pressed="' + (isComparing ? 'true' : 'false') + '" aria-label="' + escapeHtml(isComparing ? t('card.compareAdded') : t('card.compareAdd')) + '" title="' + escapeHtml(isComparing ? t('card.compareAdded') : t('card.compareAdd')) + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5"/><path d="M8 21H3v-5"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>' +
         '</button>' +
-        directionsLinkHtml +
+        '<button type="button" class="card-icon-pill' + (isFav ? ' is-fav' : '') + '" data-fav-garage="' + escapeHtml(garage.id) + '" aria-pressed="' + (isFav ? 'true' : 'false') + '" aria-label="' + escapeHtml(isFav ? t('card.favRemove') : t('card.favAdd')) + '" title="' + escapeHtml(isFav ? t('card.favRemove') : t('card.favAdd')) + '">' +
+          '<svg viewBox="0 0 24 24" fill="' + (isFav ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>' +
+        '</button>' +
       '</div>' +
-      '<button class="btn-reserve" type="button" ' + (!eligible ? 'disabled' : '') + '>' +
-        escapeHtml(btnLabel) +
-      '</button>' +
     '</div>' +
 
-    '<div class="card-details" id="' + escapeHtml(detailsId) + '"' + (isExpanded ? '' : ' hidden') + '>' +
-      '<div>' +
-        '<div class="detail-section-title">' + escapeHtml(t('card.amenitiesTitle')) + '</div>' +
-        buildAmenitiesMatrixHtml(garage) +
-      '</div>' +
-      '<div>' +
-        '<div class="detail-section-title">' + escapeHtml(t('card.restrictionsTitle')) + '</div>' +
-        '<div class="restrictions-grid">' +
-          '<div class="restriction-item"><span>' + escapeHtml(t('card.hoursLabel')) + '</span><strong>' +
-            escapeHtml(op.open24 ? t('card.open24') : t('card.hoursRange', { open: op.open, close: op.close })) + '</strong></div>' +
-          '<div class="restriction-item"><span>' + escapeHtml(t('card.maxHeightLabel')) + '</span><strong>' +
-            escapeHtml(t('card.maxHeight', { h: Number(garage.maxHeightM).toFixed(2) })) + '</strong></div>' +
-          '<div class="restriction-item"><span>' + escapeHtml(t('card.vehiclesLabel')) + '</span><strong>' +
-            escapeHtml(formatVehicleList(garage.acceptedVehicleTypes)) + '</strong></div>' +
+    '<div class="card-body">' +
+      '<div class="card-top">' +
+        '<div class="card-identity">' +
+          '<button type="button" class="card-title-btn" data-open-detail="' + escapeHtml(garage.id) + '"><h3>' + escapeHtml(garage.name) + '</h3></button>' +
+          '<div class="addr">' + escapeHtml(garage.address) + '</div>' +
+          ratingHtml +
+        '</div>' +
+        '<div class="price">' +
+          '<strong>' + (quote ? formatArs(quote.totalArs) : formatArs(garage.ratePerHour)) + '</strong>' +
+          '<span>' + escapeHtml(t('card.totalFor', { duration: durationLabel })) + '</span>' +
+          '<span class="price-avg">' + escapeHtml(t('card.avgHourly', { rate: formatArs(avgHourly) })) + '</span>' +
         '</div>' +
       '</div>' +
-      '<div class="detail-footer-note">' +
-        '<span>' + escapeHtml(t('card.demoProvenanceNote', { score: rating.score !== null ? rating.score.toFixed(1) : '—', count: rating.reviewCount })) + ' ' +
-          escapeHtml(t('card.directionsDisclaimer')) + '</span>' +
+
+      '<div class="stats">' +
+        walkHtml +
+        statusIndicatorHtml +
+      '</div>' +
+
+      '<div class="tags">' +
+        essentialPillsHtml +
+        dynamicBadgeHtml +
+      '</div>' +
+
+      '<div class="card-foot">' +
+        '<div class="card-links">' +
+          '<button type="button" class="link-btn btn-toggle-details" data-toggle-details="' + escapeHtml(garage.id) + '" aria-expanded="' + (isExpanded ? 'true' : 'false') + '" aria-controls="' + escapeHtml(detailsId) + '">' +
+            escapeHtml(isExpanded ? t('card.detailsHide') : t('card.detailsShow')) +
+          '</button>' +
+          directionsLinkHtml +
+        '</div>' +
+        '<div class="card-cta-group">' +
+          '<button type="button" class="btn-detail-open" data-open-detail="' + escapeHtml(garage.id) + '">' + escapeHtml(t('card.openDetail')) + '</button>' +
+          '<button class="btn-reserve" type="button" ' + (!eligible ? 'disabled' : '') + '>' +
+            escapeHtml(btnLabel) +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="card-details" id="' + escapeHtml(detailsId) + '"' + (isExpanded ? '' : ' hidden') + '>' +
+        '<div>' +
+          '<div class="detail-section-title">' + escapeHtml(t('card.amenitiesTitle')) + '</div>' +
+          buildAmenitiesMatrixHtml(garage) +
+        '</div>' +
+        '<div>' +
+          '<div class="detail-section-title">' + escapeHtml(t('card.restrictionsTitle')) + '</div>' +
+          '<div class="restrictions-grid">' +
+            '<div class="restriction-item"><span>' + escapeHtml(t('card.hoursLabel')) + '</span><strong>' +
+              escapeHtml(op.open24 ? t('card.open24') : t('card.hoursRange', { open: op.open, close: op.close })) + '</strong></div>' +
+            '<div class="restriction-item"><span>' + escapeHtml(t('card.maxHeightLabel')) + '</span><strong>' +
+              escapeHtml(t('card.maxHeight', { h: Number(garage.maxHeightM).toFixed(2) })) + '</strong></div>' +
+            '<div class="restriction-item"><span>' + escapeHtml(t('card.vehiclesLabel')) + '</span><strong>' +
+              escapeHtml(formatVehicleList(garage.acceptedVehicleTypes)) + '</strong></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-footer-note">' +
+          '<span>' + escapeHtml(t('card.demoProvenanceNote', { score: rating.score !== null ? rating.score.toFixed(1) : '—', count: rating.reviewCount })) + ' ' +
+            escapeHtml(t('card.directionsDisclaimer')) + '</span>' +
+        '</div>' +
       '</div>' +
     '</div>';
 
-  // Hover sync with interactive map marker
   card.addEventListener('mouseenter', function () { highlightMapMarker(garage.id, true); });
   card.addEventListener('mouseleave', function () { highlightMapMarker(garage.id, false); });
+  card.addEventListener('click', function (ev) {
+    if (ev.target.closest('button, a')) return;
+    setSelectedGarage(garage.id, false);
+  });
+
+  Array.prototype.forEach.call(card.querySelectorAll('[data-open-detail]'), function (el) {
+    el.addEventListener('click', function (ev) {
+      if (ev.target.closest('.card-media-actions')) return;
+      ev.stopPropagation();
+      setSelectedGarage(garage.id, false);
+      openDetailPanel(garage.id, 'info');
+    });
+  });
+
+  const favBtn = card.querySelector('[data-fav-garage]');
+  if (favBtn) {
+    favBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      toggleFavoriteGarage(garage.id);
+    });
+  }
+
+  const cmpBtn = card.querySelector('[data-compare-garage]');
+  if (cmpBtn) {
+    cmpBtn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      toggleCompare(garage.id);
+    });
+  }
 
   const toggleBtn = card.querySelector('.btn-toggle-details');
   if (toggleBtn) {
@@ -1738,6 +2633,7 @@ function renderResults(recenter) {
   wrap.innerHTML = '';
   state.results = [];
   state.evaluations = {};
+  state.recommendations = null;
 
   const garages = getActiveGarages();
   const bookings = getBookings();
@@ -1749,6 +2645,7 @@ function renderResults(recenter) {
       '<div class="empty-state"><strong>' + escapeHtml(t('results.invalidTitle')) + '</strong>' +
       '<span>' + escapeHtml(t('validation.' + errCode, { max: Core.MAX_DURATION_HOURS })) + '</span></div>';
     q('#summaryLine').textContent = t('results.summaryInvalid');
+    renderRecommendationsStrip();
     renderMap(!!recenter);
     return;
   }
@@ -1766,6 +2663,8 @@ function renderResults(recenter) {
   }, distanceTo);
 
   const sorted = Core.sortGarages(filtered, state.evaluations, state.sort, distanceTo);
+  state.recommendations = Core.computeRecommendations(sorted, state.evaluations, distanceTo);
+  renderRecommendationsStrip();
 
   let eligibleCount = 0;
   sorted.forEach(function (garage) {
@@ -1795,10 +2694,46 @@ function renderResults(recenter) {
     eligible: eligibleCount
   });
 
+  const handleLabel = q('#sheetHandleLabel');
+  if (handleLabel) {
+    handleLabel.textContent = t('mobile.sheetCount', { count: state.results.length });
+  }
+
   renderMap(!!recenter);
+  renderCompareBar();
+  if (state.detailGarageId) renderDetailPanel();
+  if (q('#compareModal').classList.contains('show')) renderCompareModal();
 }
 
-/* ------------------------- Interactive Leaflet / OSM Map ------------------------- */
+/* ------------------------- Card <-> Map Bidirectional Sync & Leaflet Map ------------------------- */
+
+function setSelectedGarage(garageId, scrollCard) {
+  state.selectedGarageId = garageId;
+  Array.prototype.forEach.call(document.querySelectorAll('#resultsList .card'), function (c) {
+    const match = c.getAttribute('data-garage') === garageId;
+    c.classList.toggle('is-selected', match);
+    if (match && scrollCard) {
+      c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+  Object.keys(state.markerByGarageId).forEach(function (id) {
+    const entry = state.markerByGarageId[id];
+    const el = entry && entry.marker ? entry.marker.getElement() : null;
+    if (!el) return;
+    const pill = el.querySelector('.price-marker');
+    if (pill) pill.classList.toggle('is-selected', id === garageId);
+    entry.marker.setZIndexOffset(id === garageId ? 1500 : (entry.mode === 'price' ? 500 : 0));
+  });
+}
+
+function focusGarageFromSync(garageId, panMap) {
+  setSelectedGarage(garageId, true);
+  const entry = state.markerByGarageId[garageId];
+  if (panMap && entry && state.map) {
+    state.map.panTo([entry.garage.lat, entry.garage.lng], { animate: true });
+    entry.marker.openPopup();
+  }
+}
 
 function highlightMapMarker(garageId, active) {
   const entry = state.markerByGarageId[garageId];
@@ -1807,7 +2742,8 @@ function highlightMapMarker(garageId, active) {
   if (!el) return;
   const pill = el.querySelector('.price-marker');
   if (pill) pill.classList.toggle('is-active', !!active);
-  entry.marker.setZIndexOffset(active ? 1200 : (entry.mode === 'price' ? 500 : 0));
+  const isSel = state.selectedGarageId === garageId;
+  entry.marker.setZIndexOffset(active || isSel ? 1400 : (entry.mode === 'price' ? 500 : 0));
 }
 
 function renderMap(recenter) {
@@ -1845,8 +2781,8 @@ function renderMap(recenter) {
     const destIcon = L.divIcon({
       className: 'dest-marker-icon',
       html: '<div class="dest-marker">' + escapeHtml(t('map.destination')) + '</div>',
-      iconSize: [78, 26],
-      iconAnchor: [39, 13]
+      iconSize: [84, 28],
+      iconAnchor: [42, 14]
     });
     L.marker(state.destCoords, { icon: destIcon, zIndexOffset: 1000, title: t('map.destPopup') })
       .bindPopup('<strong>' + escapeHtml(state.destLabel || t('map.destPopup')) + '</strong>')
@@ -1861,6 +2797,7 @@ function renderMap(recenter) {
     const km = state.destCoords ? distanceTo(garage) : null;
     const rating = Core.getGarageRating(garage);
     const dirUrl = MapProviderRegistry.getActive().buildDirectionsUrl(garage);
+    const isSel = state.selectedGarageId === garage.id;
 
     const popup =
       '<div class="map-popup">' +
@@ -1874,15 +2811,17 @@ function renderMap(recenter) {
           '<button class="mp-reserve" type="button" data-garage="' + escapeHtml(garage.id) + '" ' + (!eligible ? 'disabled' : '') + '>' +
             escapeHtml(eligible ? t('map.reserveFromMap') : t('reserve.confirmUnavailable')) +
           '</button>' +
+          '<button class="mp-detail-btn" type="button" data-mp-detail="' + escapeHtml(garage.id) + '">' + escapeHtml(t('map.detailFromMap')) + '</button>' +
           (dirUrl ? '<a class="mp-dir" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('map.directionsShort')) + '</a>' : '') +
         '</div>' +
       '</div>';
 
+    const unavailGlyph = !eligible ? '✕ ' : '';
     const priceIcon = L.divIcon({
       className: 'price-marker-icon',
-      html: '<div class="price-marker' + (!eligible ? ' is-zero' : '') + '">$' + formatNumber(totalPrice) + '</div>',
-      iconSize: [86, 30],
-      iconAnchor: [43, 15],
+      html: '<div class="price-marker' + (!eligible ? ' is-zero' : '') + (isSel ? ' is-selected' : '') + '" data-pin-garage="' + escapeHtml(garage.id) + '">' + unavailGlyph + '$' + formatNumber(totalPrice) + '</div>',
+      iconSize: [90, 32],
+      iconAnchor: [45, 16],
       popupAnchor: [0, -16]
     });
     const dotIcon = L.divIcon({
@@ -1897,6 +2836,9 @@ function renderMap(recenter) {
       icon: priceIcon,
       riseOnHover: true,
       title: garage.name + ' · ' + formatArs(totalPrice)
+    });
+    marker.on('click', function () {
+      setSelectedGarage(garage.id, true);
     });
     marker.bindPopup(popup).addTo(group);
     const entry = { marker: marker, garage: garage, priceIcon: priceIcon, dotIcon: dotIcon, mode: 'price' };
@@ -1942,11 +2884,11 @@ function declutterPriceMarkers() {
   const placed = [];
   if (state.destCoords) {
     const destPoint = map.latLngToContainerPoint(state.destCoords);
-    placed.push({ left: destPoint.x - 39, top: destPoint.y - 13, w: 78, h: 26 });
+    placed.push({ left: destPoint.x - 42, top: destPoint.y - 14, w: 84, h: 28 });
   }
 
-  const W = 86;
-  const H = 30;
+  const W = 90;
+  const H = 32;
   const PAD = 6;
 
   items.forEach(function (entry) {
@@ -1962,7 +2904,7 @@ function declutterPriceMarkers() {
         box.top + box.h + PAD <= top;
       if (!separated) { collides = true; break; }
     }
-    if (collides) {
+    if (collides && entry.item.garage.id !== state.selectedGarageId) {
       if (entry.item.mode !== 'dot') {
         entry.item.marker.setIcon(entry.item.dotIcon);
         entry.item.mode = 'dot';
@@ -1973,15 +2915,823 @@ function declutterPriceMarkers() {
         entry.item.marker.setIcon(entry.item.priceIcon);
         entry.item.mode = 'price';
       }
-      entry.item.marker.setZIndexOffset(500);
+      entry.item.marker.setZIndexOffset(entry.item.garage.id === state.selectedGarageId ? 1500 : 500);
       placed.push({ left: left, top: top, w: W, h: H });
     }
   });
 }
 
-/* ------------------------- Streamlined Reservation Modal ------------------------- */
+/* ------------------------- Desktop Adjustable 60/40 Split Divider ------------------------- */
 
-function buildQuoteBreakdownHtml(quote) {
+function setSplitRatio(listPct) {
+  const clamped = Math.max(30, Math.min(65, Math.round(Number(listPct) || 40)));
+  state.splitPct = clamped;
+  document.documentElement.style.setProperty('--list-pct', clamped + '%');
+  const div = q('#splitDivider');
+  if (div) div.setAttribute('aria-valuenow', String(clamped));
+  lsPrefSet(LS.splitPct, String(clamped));
+  if (state.map) {
+    setTimeout(function () {
+      state.map.invalidateSize();
+      declutterPriceMarkers();
+    }, 40);
+  }
+}
+
+function wireSplitDivider() {
+  const div = q('#splitDivider');
+  const layout = q('#marketplaceLayout');
+  if (!div || !layout) return;
+
+  let dragging = false;
+
+  div.addEventListener('pointerdown', function (ev) {
+    dragging = true;
+    div.classList.add('is-dragging');
+    div.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+  });
+
+  div.addEventListener('pointermove', function (ev) {
+    if (!dragging) return;
+    const rect = layout.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const pct = ((ev.clientX - rect.left) / rect.width) * 100;
+    setSplitRatio(pct);
+  });
+
+  function stopDrag() {
+    if (!dragging) return;
+    dragging = false;
+    div.classList.remove('is-dragging');
+  }
+  div.addEventListener('pointerup', stopDrag);
+  div.addEventListener('pointercancel', stopDrag);
+
+  div.addEventListener('keydown', function (ev) {
+    if (ev.key === 'ArrowLeft') {
+      ev.preventDefault();
+      setSplitRatio(state.splitPct - 4);
+    } else if (ev.key === 'ArrowRight') {
+      ev.preventDefault();
+      setSplitRatio(state.splitPct + 4);
+    } else if (ev.key === 'Home') {
+      ev.preventDefault();
+      setSplitRatio(40);
+    }
+  });
+}
+
+/* ------------------------- Mobile Draggable Bottom Sheet ------------------------- */
+
+function setSheetState(nextState) {
+  const allowed = ['peek', 'half', 'full'];
+  const valid = allowed.indexOf(nextState) !== -1 ? nextState : 'half';
+  state.sheetState = valid;
+  state.mobileView = valid === 'peek' ? 'map' : 'list';
+
+  const layout = q('#marketplaceLayout');
+  if (layout) {
+    layout.setAttribute('data-sheet-state', valid);
+    layout.setAttribute('data-mobile-view', state.mobileView);
+  }
+  const handle = q('#sheetHandle');
+  if (handle) handle.setAttribute('aria-expanded', valid !== 'peek' ? 'true' : 'false');
+  updateMobileViewButton();
+  if (state.map) {
+    setTimeout(function () {
+      state.map.invalidateSize();
+      declutterPriceMarkers();
+    }, 140);
+  }
+}
+
+function wireMobileSheet() {
+  const handle = q('#sheetHandle');
+  if (!handle) return;
+
+  let startY = null;
+  let moved = false;
+
+  handle.addEventListener('pointerdown', function (ev) {
+    startY = ev.clientY;
+    moved = false;
+    handle.setPointerCapture(ev.pointerId);
+  });
+
+  handle.addEventListener('pointermove', function (ev) {
+    if (startY === null) return;
+    if (Math.abs(ev.clientY - startY) > 18) moved = true;
+  });
+
+  handle.addEventListener('pointerup', function (ev) {
+    if (startY === null) return;
+    const dy = ev.clientY - startY;
+    startY = null;
+    if (moved) {
+      if (dy < -36) {
+        setSheetState(state.sheetState === 'peek' ? 'half' : 'full');
+      } else if (dy > 36) {
+        setSheetState(state.sheetState === 'full' ? 'half' : 'peek');
+      }
+    }
+  });
+
+  handle.addEventListener('click', function () {
+    if (moved) { moved = false; return; }
+    const order = { peek: 'half', half: 'full', full: 'peek' };
+    setSheetState(order[state.sheetState] || 'half');
+  });
+
+  handle.addEventListener('keydown', function (ev) {
+    if (ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      setSheetState(state.sheetState === 'peek' ? 'half' : 'full');
+    } else if (ev.key === 'ArrowDown') {
+      ev.preventDefault();
+      setSheetState(state.sheetState === 'full' ? 'half' : 'peek');
+    }
+  });
+}
+
+/* ------------------------- Garage Detail Side Panel & 5 Tabs + Lightbox Gallery ------------------------- */
+
+function openDetailPanel(garageId, initialTab) {
+  const garage = findGarageById(garageId);
+  if (!garage) return;
+  state.detailGarageId = garage.id;
+  state.detailTab = initialTab || 'info';
+  state.detailPhotoIndex = 0;
+  renderDetailPanel();
+  q('#detailBackdrop').classList.add('show');
+  q('#detailBackdrop').setAttribute('aria-hidden', 'false');
+  const panel = q('#detailPanel');
+  panel.classList.add('show');
+  panel.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  const closeBtn = q('#detailCloseBtn', panel);
+  if (closeBtn) closeBtn.focus();
+}
+
+function closeDetailPanel() {
+  state.detailGarageId = null;
+  q('#detailBackdrop').classList.remove('show');
+  q('#detailBackdrop').setAttribute('aria-hidden', 'true');
+  const panel = q('#detailPanel');
+  panel.classList.remove('show');
+  panel.setAttribute('aria-hidden', 'true');
+  if (!q('.modal.show')) document.body.classList.remove('modal-open');
+}
+
+function renderDetailPanel() {
+  const panel = q('#detailPanel');
+  if (!panel || !state.detailGarageId) return;
+  const garage = findGarageById(state.detailGarageId);
+  if (!garage) return;
+
+  const ev = state.evaluations[garage.id] || Core.evaluateGarageEligibility(garage, state.interval, state.vehicleType, getBookings());
+  const gallery = (Array.isArray(garage.gallery) && garage.gallery.length > 0)
+    ? garage.gallery
+    : [{ src: getGarageHeroImage(garage), captionEs: garage.name, captionEn: garage.name, provenance: 'illustrative_svg_demo' }];
+  const photoIdx = Math.max(0, Math.min(state.detailPhotoIndex, gallery.length - 1));
+  const activePhoto = gallery[photoIdx];
+  const caption = state.lang === 'en' ? (activePhoto.captionEn || activePhoto.captionEs) : (activePhoto.captionEs || activePhoto.captionEn);
+  const op = Core.getGarageOperatingMinutes(garage);
+  const rating = Core.getGarageRating(garage);
+  const km = state.destCoords ? distanceTo(garage) : null;
+  const avgHourly = Core.getAverageHourlyRate(ev.quote, garage.ratePerHour);
+  const dirUrl = MapProviderRegistry.getActive().buildDirectionsUrl(garage);
+  const isFav = isFavoriteGarage(garage.id);
+  const isCmp = state.compareIds.indexOf(garage.id) !== -1;
+
+  const tabs = [
+    { id: 'info', label: t('detail.tabInfo') },
+    { id: 'services', label: t('detail.tabServices') },
+    { id: 'photos', label: t('detail.tabPhotos') },
+    { id: 'reviews', label: t('detail.tabReviews') },
+    { id: 'location', label: t('detail.tabLocation') }
+  ];
+
+  const reviewsHtml = (Array.isArray(garage.demoReviews) && garage.demoReviews.length > 0)
+    ? garage.demoReviews.map(function (r) {
+        return '<div class="review-card" data-demo-review="true">' +
+          '<div class="review-head">' +
+            '<span class="review-author">' + escapeHtml(r.author) + ' · <span class="rating-star">★</span> ' + r.rating + '.0</span>' +
+            '<span class="badge badge-simulado">' + escapeHtml(t('detail.reviewBadge')) + '</span>' +
+          '</div>' +
+          '<p class="review-text">' + escapeHtml(state.lang === 'en' ? r.textEn : r.textEs) + '</p>' +
+          '<span class="review-date">' + escapeHtml(r.date) + '</span>' +
+        '</div>';
+      }).join('')
+    : '<p class="muted">' + escapeHtml(t('detail.noReviews')) + '</p>';
+
+  panel.innerHTML =
+    '<div class="detail-panel-head">' +
+      '<div class="detail-panel-title">' +
+        '<h3>' + escapeHtml(garage.name) + '</h3>' +
+        '<p>' + escapeHtml(garage.address) + '</p>' +
+      '</div>' +
+      '<div class="detail-head-actions">' +
+        '<button type="button" class="icon-btn" id="detailCompareBtn" aria-pressed="' + (isCmp ? 'true' : 'false') + '" title="' + escapeHtml(t('card.compareAdd')) + '" aria-label="' + escapeHtml(t('card.compareAdd')) + '">⇄</button>' +
+        '<button type="button" class="icon-btn" id="detailFavBtn" aria-pressed="' + (isFav ? 'true' : 'false') + '" title="' + escapeHtml(isFav ? t('card.favRemove') : t('card.favAdd')) + '" aria-label="' + escapeHtml(isFav ? t('card.favRemove') : t('card.favAdd')) + '">' + (isFav ? '♥' : '♡') + '</button>' +
+        '<button type="button" class="icon-btn" id="detailCloseBtn" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="detail-panel-scroll">' +
+      '<div class="detail-hero" id="detailHeroClick">' +
+        '<img src="' + escapeHtml(activePhoto.src) + '" alt="' + escapeHtml(caption + ' — ' + t('card.illustrativeLabel')) + '" />' +
+        '<span class="illustrative-badge" data-illustrative-label="true">' + escapeHtml(t('card.illustrativeLabel')) + '</span>' +
+        '<button type="button" class="detail-expand-btn" id="detailExpandGalleryBtn">' + escapeHtml(t('detail.expandGallery')) + ' (' + gallery.length + ')</button>' +
+      '</div>' +
+
+      '<div class="detail-thumbs">' + gallery.map(function (ph, idx) {
+        return '<button type="button" class="detail-thumb' + (idx === photoIdx ? ' is-active' : '') + '" data-thumb-idx="' + idx + '" aria-label="' + escapeHtml((state.lang === 'en' ? ph.captionEn : ph.captionEs) + ' — ' + t('card.illustrativeLabel')) + '">' +
+          '<img src="' + escapeHtml(ph.src) + '" alt="" />' +
+        '</button>';
+      }).join('') + '</div>' +
+
+      '<div class="detail-tabs" role="tablist">' + tabs.map(function (tb) {
+        const sel = state.detailTab === tb.id;
+        return '<button type="button" class="detail-tab" role="tab" id="dtab-' + tb.id + '" aria-selected="' + (sel ? 'true' : 'false') + '" aria-controls="dpanel-' + tb.id + '" data-detail-tab="' + tb.id + '">' +
+          escapeHtml(tb.label) + '</button>';
+      }).join('') + '</div>' +
+
+      // TAB 1: INFO
+      '<div class="detail-tabpanel" role="tabpanel" id="dpanel-info" aria-labelledby="dtab-info"' + (state.detailTab === 'info' ? '' : ' hidden') + '>' +
+        '<div class="restrictions-grid">' +
+          '<div class="restriction-item"><span>' + escapeHtml(t('card.hoursLabel')) + '</span><strong>' + escapeHtml(op.open24 ? t('card.open24') : op.open + '–' + op.close) + '</strong></div>' +
+          '<div class="restriction-item"><span>' + escapeHtml(t('card.maxHeightLabel')) + '</span><strong>' + escapeHtml(t('card.maxHeight', { h: Number(garage.maxHeightM).toFixed(2) })) + '</strong></div>' +
+          '<div class="restriction-item"><span>' + escapeHtml(t('card.vehiclesLabel')) + '</span><strong>' + escapeHtml(formatVehicleList(garage.acceptedVehicleTypes)) + '</strong></div>' +
+        '</div>' +
+        '<div class="summary-grid">' +
+          '<div><span>' + escapeHtml(t('reserve.spotsNow')) + '</span><strong>' + ev.availability.availableSpaces + ' / ' + garage.totalSpaces + '</strong></div>' +
+          '<div><span>' + escapeHtml(t('compare.rowAvg')) + '</span><strong>' + formatArs(avgHourly) + '/h</strong></div>' +
+        '</div>' +
+        (ev.quote ? buildQuoteBreakdownHtml(ev.quote, 'detailQuoteBreakdown') : '') +
+      '</div>' +
+
+      // TAB 2: SERVICES
+      '<div class="detail-tabpanel" role="tabpanel" id="dpanel-services" aria-labelledby="dtab-services"' + (state.detailTab === 'services' ? '' : ' hidden') + '>' +
+        '<div class="detail-section-title">' + escapeHtml(t('card.amenitiesTitle')) + '</div>' +
+        buildAmenitiesMatrixHtml(garage) +
+        '<div class="detail-footer-note">' + escapeHtml(t('card.demoProvenanceNote', { score: rating.score !== null ? rating.score.toFixed(1) : '—', count: rating.reviewCount })) + '</div>' +
+      '</div>' +
+
+      // TAB 3: PHOTOS
+      '<div class="detail-tabpanel" role="tabpanel" id="dpanel-photos" aria-labelledby="dtab-photos"' + (state.detailTab === 'photos' ? '' : ' hidden') + '>' +
+        '<div class="detail-photos-grid">' + gallery.map(function (ph, idx) {
+          const cap = state.lang === 'en' ? (ph.captionEn || ph.captionEs) : (ph.captionEs || ph.captionEn);
+          return '<button type="button" class="detail-photo-card" data-open-lightbox="' + idx + '">' +
+            '<img src="' + escapeHtml(ph.src) + '" alt="' + escapeHtml(cap + ' — ' + t('card.illustrativeLabel')) + '" />' +
+            '<span class="illustrative-badge">' + escapeHtml(t('card.illustrativeLabel')) + '</span>' +
+            '<div class="detail-photo-cap">' + escapeHtml(cap) + '</div>' +
+          '</button>';
+        }).join('') + '</div>' +
+      '</div>' +
+
+      // TAB 4: REVIEWS
+      '<div class="detail-tabpanel" role="tabpanel" id="dpanel-reviews" aria-labelledby="dtab-reviews"' + (state.detailTab === 'reviews' ? '' : ' hidden') + '>' +
+        '<div class="rating-row" data-demo-rating="true">' +
+          '<span class="rating-star">★</span>' +
+          '<span class="rating-score">' + (rating.score !== null ? rating.score.toFixed(1) : '—') + '</span>' +
+          '<span class="rating-count">(' + escapeHtml(t('card.ratingDemo', { count: rating.reviewCount })) + ')</span>' +
+        '</div>' +
+        '<div class="detail-footer-note">' + escapeHtml(t('detail.reviewsNotice')) + '</div>' +
+        reviewsHtml +
+      '</div>' +
+
+      // TAB 5: LOCATION
+      '<div class="detail-tabpanel" role="tabpanel" id="dpanel-location" aria-labelledby="dtab-location"' + (state.detailTab === 'location' ? '' : ' hidden') + '>' +
+        '<div class="summary-grid">' +
+          '<div><span>' + escapeHtml(t('success.address')) + '</span><strong>' + escapeHtml(garage.address) + '</strong></div>' +
+          '<div><span>' + escapeHtml(t('detail.locationCoords')) + '</span><strong>' + garage.lat.toFixed(4) + ', ' + garage.lng.toFixed(4) + '</strong></div>' +
+          '<div><span>' + escapeHtml(t('detail.locationDistance')) + '</span><strong>' + (km != null ? escapeHtml(t('map.walkMeta', { min: Math.round(walkingMinutes(km)), km: km.toFixed(2) })) : '—') + '</strong></div>' +
+          '<div><span>' + escapeHtml(t('card.hoursLabel')) + '</span><strong>' + escapeHtml(op.open24 ? t('card.open24') : op.open + '–' + op.close) + '</strong></div>' +
+        '</div>' +
+        (dirUrl ? '<a class="btn btn-secondary" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('card.directionsDemo')) + '</a>' : '') +
+        '<div class="detail-footer-note">' + escapeHtml(t('card.directionsDisclaimer')) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="detail-panel-foot">' +
+      '<div class="detail-foot-price">' +
+        '<strong>' + (ev.quote ? formatArs(ev.quote.totalArs) : formatArs(garage.ratePerHour)) + '</strong>' +
+        '<span>' + escapeHtml(t('card.avgHourly', { rate: formatArs(avgHourly) })) + '</span>' +
+      '</div>' +
+      '<button type="button" class="btn btn-primary" id="detailReserveBtn"' + (!ev.eligible ? ' disabled' : '') + '>' +
+        escapeHtml(ev.eligible ? t('card.reserve') : t('reserve.confirmUnavailable')) +
+      '</button>' +
+    '</div>';
+
+  q('#detailCloseBtn', panel).addEventListener('click', closeDetailPanel);
+  q('#detailFavBtn', panel).addEventListener('click', function () { toggleFavoriteGarage(garage.id); });
+  q('#detailCompareBtn', panel).addEventListener('click', function () { toggleCompare(garage.id); renderDetailPanel(); });
+  q('#detailHeroClick', panel).addEventListener('click', function () { openGalleryModal(garage.id, photoIdx); });
+  q('#detailExpandGalleryBtn', panel).addEventListener('click', function (ev2) {
+    ev2.stopPropagation();
+    openGalleryModal(garage.id, photoIdx);
+  });
+
+  Array.prototype.forEach.call(panel.querySelectorAll('[data-thumb-idx]'), function (btn) {
+    btn.addEventListener('click', function () {
+      state.detailPhotoIndex = Number(btn.getAttribute('data-thumb-idx')) || 0;
+      renderDetailPanel();
+    });
+  });
+
+  Array.prototype.forEach.call(panel.querySelectorAll('[data-open-lightbox]'), function (btn) {
+    btn.addEventListener('click', function () {
+      openGalleryModal(garage.id, Number(btn.getAttribute('data-open-lightbox')) || 0);
+    });
+  });
+
+  const tabBtns = Array.prototype.slice.call(panel.querySelectorAll('[data-detail-tab]'));
+  tabBtns.forEach(function (btn, idx) {
+    btn.addEventListener('click', function () {
+      state.detailTab = btn.getAttribute('data-detail-tab');
+      renderDetailPanel();
+      const nextBtn = q('#dtab-' + state.detailTab, panel);
+      if (nextBtn) nextBtn.focus();
+    });
+    btn.addEventListener('keydown', function (ev2) {
+      if (ev2.key === 'ArrowRight' || ev2.key === 'ArrowLeft') {
+        ev2.preventDefault();
+        const delta = ev2.key === 'ArrowRight' ? 1 : -1;
+        const target = tabBtns[(idx + delta + tabBtns.length) % tabBtns.length];
+        if (target) {
+          state.detailTab = target.getAttribute('data-detail-tab');
+          renderDetailPanel();
+          const focused = q('#dtab-' + state.detailTab, panel);
+          if (focused) focused.focus();
+        }
+      }
+    });
+  });
+
+  q('#detailReserveBtn', panel).addEventListener('click', function () {
+    closeDetailPanel();
+    selectGarage(garage);
+  });
+}
+
+/* Expandable Gallery Lightbox Modal */
+function openGalleryModal(garageId, startIndex) {
+  const garage = findGarageById(garageId);
+  if (!garage) return;
+  state.galleryGarageId = garage.id;
+  state.galleryIndex = Number(startIndex) || 0;
+  renderGalleryModal();
+  openModal('galleryModal');
+}
+
+function renderGalleryModal() {
+  const container = q('#galleryModal');
+  const garage = findGarageById(state.galleryGarageId);
+  if (!container || !garage) return;
+  const gallery = (Array.isArray(garage.gallery) && garage.gallery.length > 0)
+    ? garage.gallery
+    : [{ src: getGarageHeroImage(garage), captionEs: garage.name, captionEn: garage.name }];
+  const idx = ((state.galleryIndex % gallery.length) + gallery.length) % gallery.length;
+  state.galleryIndex = idx;
+  const ph = gallery[idx];
+  const cap = state.lang === 'en' ? (ph.captionEn || ph.captionEs) : (ph.captionEs || ph.captionEn);
+
+  container.innerHTML =
+    '<div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="galleryTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="galleryTitle">' + escapeHtml(garage.name) + ' · ' + escapeHtml(t('detail.galleryTitle')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('detail.galleryCounter', { cur: idx + 1, total: gallery.length })) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="galleryModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+      '<div class="gallery-stage">' +
+        '<img src="' + escapeHtml(ph.src) + '" alt="' + escapeHtml(cap + ' — ' + t('card.illustrativeLabel')) + '" />' +
+        '<span class="illustrative-badge" data-illustrative-label="true">' + escapeHtml(t('card.illustrativeLabel')) + '</span>' +
+      '</div>' +
+      '<p class="muted">' + escapeHtml(cap) + '</p>' +
+      '<div class="gallery-nav">' +
+        '<button type="button" class="btn btn-secondary btn-sm" id="galleryPrevBtn">← ' + escapeHtml(t('detail.galleryPrev')) + '</button>' +
+        '<button type="button" class="btn btn-secondary btn-sm" id="galleryNextBtn">' + escapeHtml(t('detail.galleryNext')) + ' →</button>' +
+      '</div>' +
+    '</div>';
+
+  q('#galleryPrevBtn', container).addEventListener('click', function () {
+    state.galleryIndex--;
+    renderGalleryModal();
+  });
+  q('#galleryNextBtn', container).addEventListener('click', function () {
+    state.galleryIndex++;
+    renderGalleryModal();
+  });
+}
+
+/* ------------------------- Garage Comparator (Up to 3 Garages) ------------------------- */
+
+function toggleCompare(garageId) {
+  const idx = state.compareIds.indexOf(garageId);
+  if (idx >= 0) {
+    state.compareIds.splice(idx, 1);
+  } else {
+    if (state.compareIds.length >= Core.MAX_COMPARE_GARAGES) {
+      toast(t('compare.limitReached'), 'warn');
+      return { ok: false, code: 'COMPARE_LIMIT_EXCEEDED' };
+    }
+    state.compareIds.push(garageId);
+  }
+  renderCompareBar();
+  renderResults(false);
+  return { ok: true, count: state.compareIds.length };
+}
+
+function clearCompare() {
+  state.compareIds = [];
+  renderCompareBar();
+  renderResults(false);
+}
+
+function renderCompareBar() {
+  const bar = q('#compareBar');
+  const itemsWrap = q('#compareBarItems');
+  const openBtn = q('#compareOpenBtn');
+  if (!bar || !itemsWrap || !openBtn) return;
+
+  if (state.compareIds.length === 0) {
+    bar.hidden = true;
+    return;
+  }
+
+  bar.hidden = false;
+  itemsWrap.innerHTML = state.compareIds.map(function (id) {
+    const g = findGarageById(id);
+    if (!g) return '';
+    return '<span class="compare-chip">' + escapeHtml(g.name) +
+      '<button type="button" data-remove-cmp="' + escapeHtml(id) + '" aria-label="' + escapeHtml(t('compare.remove')) + '">×</button>' +
+    '</span>';
+  }).join('');
+
+  openBtn.textContent = t('compare.button', { n: state.compareIds.length });
+  openBtn.disabled = state.compareIds.length < 2;
+
+  Array.prototype.forEach.call(itemsWrap.querySelectorAll('[data-remove-cmp]'), function (btn) {
+    btn.addEventListener('click', function () { toggleCompare(btn.getAttribute('data-remove-cmp')); });
+  });
+}
+
+function openCompareModal() {
+  if (state.compareIds.length < 2) {
+    toast(t('compare.needTwo'), 'warn');
+    return;
+  }
+  renderCompareModal();
+  openModal('compareModal');
+}
+
+function renderCompareModal() {
+  const container = q('#compareModal');
+  if (!container) return;
+  const selected = state.compareIds.map(findGarageById).filter(Boolean);
+  const matrix = Core.buildComparisonMatrix(selected, state.evaluations, state.interval, state.vehicleType, distanceTo, getBookings());
+  if (!matrix.ok) {
+    closeModal('compareModal');
+    return;
+  }
+
+  const hl = matrix.highlights;
+  const cols = matrix.items;
+
+  function row(label, cellFn) {
+    return '<tr><th class="compare-row-label">' + escapeHtml(label) + '</th>' +
+      cols.map(function (it) { return '<td>' + cellFn(it) + '</td>'; }).join('') +
+    '</tr>';
+  }
+
+  const amenityRows = Core.AMENITY_KEYS.map(function (key) {
+    return row(t('amenity.' + key), function (it) {
+      const st = it.amenities[key];
+      const cls = st === 'yes' ? 'badge-func' : (st === 'no' ? 'badge-danger' : 'badge-simulado');
+      return '<span class="badge ' + cls + '">' + escapeHtml(t('amenity.' + st)) + '</span>';
+    });
+  }).join('');
+
+  container.innerHTML =
+    '<div class="modal-card xl" role="dialog" aria-modal="true" aria-labelledby="compareTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="compareTitle">' + escapeHtml(t('compare.title')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('compare.subtitle', {
+            interval: formatIntervalLabel(state.interval),
+            vehicle: t('vehicle.' + state.vehicleType)
+          })) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="compareModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+      '<div class="compare-table-wrap">' +
+        '<table class="compare-table">' +
+          '<thead><tr><th class="compare-row-label"></th>' + cols.map(function (it) {
+            return '<th class="compare-col-head">' +
+              '<div class="compare-col-thumb">' +
+                '<img src="' + escapeHtml(getGarageHeroImage(it.garage)) + '" alt="' + escapeHtml(it.garage.name + ' — ' + t('card.illustrativeLabel')) + '" />' +
+                '<span class="illustrative-badge">' + escapeHtml(t('card.illustrativeLabel')) + '</span>' +
+              '</div>' +
+              '<div><strong>' + escapeHtml(it.garage.name) + '</strong></div>' +
+              '<div class="muted small">' + escapeHtml(it.garage.address) + '</div>' +
+            '</th>';
+          }).join('') + '</tr></thead>' +
+          '<tbody>' +
+            row(t('compare.rowPrice'), function (it) {
+              return '<span class="' + (hl.lowestPriceId === it.id ? 'compare-highlight' : '') + '">' + formatArs(it.totalArs) + '</span>';
+            }) +
+            row(t('compare.rowAvg'), function (it) { return formatArs(it.avgHourlyArs) + '/h'; }) +
+            row(t('compare.rowDistance'), function (it) {
+              if (it.distanceKm === null) return '—';
+              return '<span class="' + (hl.closestId === it.id ? 'compare-highlight' : '') + '">~' + Math.round(walkingMinutes(it.distanceKm)) + ' min · ' + it.distanceKm.toFixed(2) + ' km</span>';
+            }) +
+            row(t('compare.rowRating'), function (it) {
+              return '<span class="' + (hl.highestRatingId === it.id ? 'compare-highlight' : '') + '">★ ' + (it.rating.score ? it.rating.score.toFixed(1) : '—') + ' (' + it.rating.reviewCount + ' · demo)</span>';
+            }) +
+            row(t('compare.rowCapacity'), function (it) {
+              return it.eligible
+                ? '<span class="' + (hl.mostCapacityId === it.id ? 'compare-highlight' : '') + '">' + it.availableSpaces + ' / ' + it.totalSpaces + '</span>'
+                : '<span class="badge badge-danger">' + escapeHtml(reasonMessage(it.evaluation)) + '</span>';
+            }) +
+            row(t('compare.rowHours'), function (it) {
+              return escapeHtml(it.operatingHours.open24 ? t('card.open24') : it.operatingHours.open + '–' + it.operatingHours.close);
+            }) +
+            row(t('compare.rowHeight'), function (it) {
+              return escapeHtml(t('card.maxHeight', { h: Number(it.maxHeightM).toFixed(2) }));
+            }) +
+            row(t('compare.rowVehicles'), function (it) {
+              return escapeHtml(formatVehicleList(it.acceptedVehicleTypes));
+            }) +
+            amenityRows +
+            row(t('compare.rowAction'), function (it) {
+              return '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+                '<button type="button" class="btn btn-primary btn-sm" data-cmp-reserve="' + escapeHtml(it.id) + '" ' + (!it.eligible ? 'disabled' : '') + '>' + escapeHtml(it.eligible ? t('card.reserve') : t('reserve.confirmUnavailable')) + '</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-cmp-remove="' + escapeHtml(it.id) + '">' + escapeHtml(t('compare.remove')) + '</button>' +
+              '</div>';
+            }) +
+          '</tbody>' +
+        '</table>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-secondary" type="button" data-close="compareModal">' + escapeHtml(t('common.close')) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  Array.prototype.forEach.call(container.querySelectorAll('[data-cmp-reserve]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const g = findGarageById(btn.getAttribute('data-cmp-reserve'));
+      if (g) {
+        closeModal('compareModal');
+        selectGarage(g);
+      }
+    });
+  });
+
+  Array.prototype.forEach.call(container.querySelectorAll('[data-cmp-remove]'), function (btn) {
+    btn.addEventListener('click', function () {
+      toggleCompare(btn.getAttribute('data-cmp-remove'));
+      if (state.compareIds.length < 2) closeModal('compareModal');
+      else renderCompareModal();
+    });
+  });
+}
+
+/* ------------------------- Favorites, Profile & Advanced Filters Modals ------------------------- */
+
+function openFavoritesModal() {
+  renderFavoritesModal();
+  openModal('favoritesModal');
+}
+
+function renderFavoritesModal() {
+  const container = q('#favoritesModal');
+  if (!container) return;
+
+  const favGarages = state.favoriteGarageIds.map(findGarageById).filter(Boolean);
+  const garagesHtml = favGarages.length === 0
+    ? '<div class="booking-empty"><p>' + escapeHtml(t('favorites.emptyGarages')) + '</p></div>'
+    : '<div class="fav-list">' + favGarages.map(function (g) {
+        const ev = state.evaluations[g.id] || Core.evaluateGarageEligibility(g, state.interval, state.vehicleType, getBookings());
+        const price = ev && ev.quote ? formatArs(ev.quote.totalArs) : formatArs(g.ratePerHour);
+        return '<div class="fav-item">' +
+          '<img class="fav-item-thumb" src="' + escapeHtml(getGarageHeroImage(g)) + '" alt="" />' +
+          '<div class="fav-item-body"><strong>' + escapeHtml(g.name) + '</strong><span>' + escapeHtml(g.address + ' · ' + price) + '</span></div>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button type="button" class="btn btn-primary btn-sm" data-fav-open-detail="' + escapeHtml(g.id) + '">' + escapeHtml(t('card.openDetail')) + '</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" data-fav-unfav-g="' + escapeHtml(g.id) + '">×</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+
+  const favDestsHtml = state.favoriteDestinations.length === 0
+    ? '<div class="booking-empty"><p>' + escapeHtml(t('favorites.emptyDestinations')) + '</p></div>'
+    : '<div class="fav-list">' + state.favoriteDestinations.map(function (d, idx) {
+        return '<div class="fav-item">' +
+          '<div class="fav-item-body"><strong>★ ' + escapeHtml(d.label) + '</strong><span>' + d.coords[0].toFixed(4) + ', ' + d.coords[1].toFixed(4) + '</span></div>' +
+          '<div style="display:flex;gap:6px">' +
+            '<button type="button" class="btn btn-primary btn-sm" data-fav-go-dest="' + idx + '">' + escapeHtml(t('favorites.goToDest')) + '</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm" data-fav-rm-dest="' + idx + '">×</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+
+  const recentsHtml = state.recentDestinations.length === 0
+    ? '<p class="muted small">' + escapeHtml(t('favorites.emptyRecents')) + '</p>'
+    : '<div class="fav-list">' + state.recentDestinations.map(function (r, idx) {
+        return '<div class="fav-item">' +
+          '<div class="fav-item-body"><strong>↺ ' + escapeHtml(r.label) + '</strong></div>' +
+          '<button type="button" class="btn btn-secondary btn-sm" data-rec-go-dest="' + idx + '">' + escapeHtml(t('favorites.goToDest')) + '</button>' +
+        '</div>';
+      }).join('') + '</div>';
+
+  container.innerHTML =
+    '<div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="favModalTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="favModalTitle">' + escapeHtml(t('favorites.title')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('favorites.subtitle')) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="favoritesModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+      '<div class="detail-tabs" role="tablist">' +
+        '<button type="button" class="detail-tab" role="tab" aria-selected="' + (state.favoritesTab === 'garages' ? 'true' : 'false') + '" data-fav-tab="garages">' + escapeHtml(t('favorites.tabGarages', { n: favGarages.length })) + '</button>' +
+        '<button type="button" class="detail-tab" role="tab" aria-selected="' + (state.favoritesTab === 'destinations' ? 'true' : 'false') + '" data-fav-tab="destinations">' + escapeHtml(t('favorites.tabDestinations', { n: state.favoriteDestinations.length })) + '</button>' +
+      '</div>' +
+      (state.favoritesTab === 'garages'
+        ? garagesHtml
+        : (favDestsHtml + '<div class="detail-section-title" style="margin-top:8px">' + escapeHtml(t('favorites.recentsHeading')) + '</div>' + recentsHtml)) +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-secondary" type="button" data-close="favoritesModal">' + escapeHtml(t('common.close')) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  Array.prototype.forEach.call(container.querySelectorAll('[data-fav-tab]'), function (btn) {
+    btn.addEventListener('click', function () {
+      state.favoritesTab = btn.getAttribute('data-fav-tab');
+      renderFavoritesModal();
+    });
+  });
+  Array.prototype.forEach.call(container.querySelectorAll('[data-fav-open-detail]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const id = btn.getAttribute('data-fav-open-detail');
+      closeModal('favoritesModal');
+      openDetailPanel(id, 'info');
+    });
+  });
+  Array.prototype.forEach.call(container.querySelectorAll('[data-fav-unfav-g]'), function (btn) {
+    btn.addEventListener('click', function () {
+      toggleFavoriteGarage(btn.getAttribute('data-fav-unfav-g'));
+    });
+  });
+  Array.prototype.forEach.call(container.querySelectorAll('[data-fav-go-dest]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const d = state.favoriteDestinations[Number(btn.getAttribute('data-fav-go-dest'))];
+      if (d) { closeModal('favoritesModal'); selectDestinationEntry(d); }
+    });
+  });
+  Array.prototype.forEach.call(container.querySelectorAll('[data-fav-rm-dest]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const d = state.favoriteDestinations[Number(btn.getAttribute('data-fav-rm-dest'))];
+      if (d) toggleFavoriteDestination(d);
+    });
+  });
+  Array.prototype.forEach.call(container.querySelectorAll('[data-rec-go-dest]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const r = state.recentDestinations[Number(btn.getAttribute('data-rec-go-dest'))];
+      if (r) { closeModal('favoritesModal'); selectDestinationEntry(r); }
+    });
+  });
+}
+
+function openProfileModal() {
+  renderProfileModal();
+  openModal('profileModal');
+}
+
+function renderProfileModal() {
+  const container = q('#profileModal');
+  if (!container) return;
+
+  container.innerHTML =
+    '<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="profileModalTitle">' + escapeHtml(t('profile.title')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('profile.subtitle')) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="profileModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+      '<div class="pref-row">' +
+        '<div><strong>' + escapeHtml(t('profile.appearance')) + '</strong><div class="muted small">' + escapeHtml(t('profile.appearanceDesc')) + '</div></div>' +
+        '<button type="button" class="btn btn-secondary btn-sm" id="profileThemeBtn">' + escapeHtml(state.theme === 'dark' ? t('theme.light') : t('theme.dark')) + '</button>' +
+      '</div>' +
+      '<div class="pref-row">' +
+        '<div><strong>' + escapeHtml(t('profile.language')) + '</strong><div class="muted small">' + escapeHtml(t('profile.languageDesc')) + '</div></div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button type="button" class="btn btn-sm ' + (state.lang === 'es' ? 'btn-primary' : 'btn-secondary') + '" data-prof-lang="es">ES</button>' +
+          '<button type="button" class="btn btn-sm ' + (state.lang === 'en' ? 'btn-primary' : 'btn-secondary') + '" data-prof-lang="en">EN</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-notes">' +
+        '<span class="badge badge-conceptual">Sprint 2C</span>' +
+        '<span><strong>' + escapeHtml(t('profile.scopeTitle')) + ':</strong> ' + escapeHtml(t('profile.scopeDesc')) + '</span>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+        '<button class="btn btn-primary" type="button" data-close="profileModal">' + escapeHtml(t('common.done')) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  q('#profileThemeBtn', container).addEventListener('click', toggleTheme);
+  Array.prototype.forEach.call(container.querySelectorAll('[data-prof-lang]'), function (btn) {
+    btn.addEventListener('click', function () { setLanguage(btn.getAttribute('data-prof-lang')); });
+  });
+}
+
+function openAdvancedFiltersModal() {
+  renderAdvancedFiltersModal();
+  openModal('advancedFiltersModal');
+}
+
+function renderAdvancedFiltersModal() {
+  const container = q('#advancedFiltersModal');
+  if (!container) return;
+
+  container.innerHTML =
+    '<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="advFiltersTitle">' +
+      '<div class="modal-head">' +
+        '<div>' +
+          '<h3 id="advFiltersTitle">' + escapeHtml(t('filters.advancedTitle')) + '</h3>' +
+          '<p class="modal-sub">' + escapeHtml(t('filters.advancedSub')) + '</p>' +
+        '</div>' +
+        '<button class="icon-btn" type="button" data-close="advancedFiltersModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
+      '</div>' +
+      '<div class="qa-panel">' +
+        '<label class="qa-toggle-row" for="advOnlyAvail">' +
+          '<span>' + escapeHtml(t('filters.onlyAvailable')) + '</span>' +
+          '<input type="checkbox" id="advOnlyAvail"' + (!state.showAll ? ' checked' : '') + ' />' +
+        '</label>' +
+        '<div class="detail-section-title" style="margin-top:6px">' + escapeHtml(t('card.amenitiesTitle')) + '</div>' +
+        '<div class="filter-chips">' + Core.AMENITY_KEYS.map(function (k) {
+          const active = !!state.filters.amenities[k];
+          return '<button type="button" class="chip' + (active ? ' is-active' : '') + '" data-adv-amenity="' + k + '" aria-pressed="' + (active ? 'true' : 'false') + '">' +
+            amenityIconSvg(k) + '<span>' + escapeHtml(t('amenity.' + k)) + '</span></button>';
+        }).join('') + '</div>' +
+        '<div class="summary-grid" style="margin-top:8px">' +
+          '<div><span>' + escapeHtml(t('filters.maxPrice')) + '</span>' +
+            '<select id="advMaxPrice" class="input-sm" style="width:100%;margin-top:4px">' + q('#maxPriceFilter').innerHTML + '</select></div>' +
+          '<div><span>' + escapeHtml(t('filters.minRating')) + '</span>' +
+            '<select id="advMinRating" class="input-sm" style="width:100%;margin-top:4px">' + q('#minRatingFilter').innerHTML + '</select></div>' +
+          '<div><span>' + escapeHtml(t('filters.maxDistance')) + '</span>' +
+            '<select id="advMaxDist" class="input-sm" style="width:100%;margin-top:4px">' + q('#maxDistanceFilter').innerHTML + '</select></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-actions">' +
+        '<button type="button" class="btn btn-ghost" id="advClearBtn">' + escapeHtml(t('filters.clear')) + '</button>' +
+        '<button type="button" class="btn btn-primary" data-close="advancedFiltersModal">' + escapeHtml(t('filters.apply', { n: state.results.length })) + '</button>' +
+      '</div>' +
+    '</div>';
+
+  q('#advMaxPrice', container).value = state.filters.maxPriceArs;
+  q('#advMinRating', container).value = state.filters.minRating;
+  q('#advMaxDist', container).value = state.filters.maxDistanceKm;
+
+  q('#advOnlyAvail', container).addEventListener('change', function (ev) {
+    q('#onlyAvailable').checked = ev.target.checked;
+    renderResults(false);
+    renderAdvancedFiltersModal();
+  });
+  Array.prototype.forEach.call(container.querySelectorAll('[data-adv-amenity]'), function (btn) {
+    btn.addEventListener('click', function () {
+      const k = btn.getAttribute('data-adv-amenity');
+      state.filters.amenities[k] = !state.filters.amenities[k];
+      renderResults(false);
+      renderAdvancedFiltersModal();
+    });
+  });
+  q('#advMaxPrice', container).addEventListener('change', function (ev) {
+    q('#maxPriceFilter').value = ev.target.value;
+    renderResults(false);
+    renderAdvancedFiltersModal();
+  });
+  q('#advMinRating', container).addEventListener('change', function (ev) {
+    q('#minRatingFilter').value = ev.target.value;
+    renderResults(false);
+    renderAdvancedFiltersModal();
+  });
+  q('#advMaxDist', container).addEventListener('change', function (ev) {
+    q('#maxDistanceFilter').value = ev.target.value;
+    renderResults(false);
+    renderAdvancedFiltersModal();
+  });
+  q('#advClearBtn', container).addEventListener('click', function () { clearFilters(false); });
+}
+
+/* ------------------------- Preserved Reservation, Success, Bookings, QR & QA Modals ------------------------- */
+
+function buildQuoteBreakdownHtml(quote, detailsId) {
   if (!quote) return '';
   const multiDay = state.interval && state.interval.isOvernight;
   const rows = (quote.segments || []).map(function (seg) {
@@ -2002,6 +3752,9 @@ function buildQuoteBreakdownHtml(quote) {
     '</tr>';
   }).join('');
 
+  const idAttr = detailsId ? ' id="' + escapeHtml(detailsId) + '"' : ' id="quoteBreakdownDetails"';
+  const totalIdAttr = detailsId ? '' : ' id="reserveQuoteTotal"';
+
   return '' +
     '<div class="quote-summary-card">' +
       '<div class="quote-summary-top">' +
@@ -2009,9 +3762,9 @@ function buildQuoteBreakdownHtml(quote) {
           '<div class="quote-summary-label">' + escapeHtml(t('reserve.totalTitle')) + '</div>' +
           '<div class="quote-summary-sub">' + escapeHtml(t('reserve.quoteFrozenBadge')) + '</div>' +
         '</div>' +
-        '<div class="quote-summary-total" id="reserveQuoteTotal">' + formatArs(quote.totalArs) + '</div>' +
+        '<div class="quote-summary-total"' + totalIdAttr + '>' + formatArs(quote.totalArs) + '</div>' +
       '</div>' +
-      '<details class="quote-details" id="quoteBreakdownDetails">' +
+      '<details class="quote-details"' + idAttr + '>' +
         '<summary>' + escapeHtml(t('reserve.breakdownToggle', { n: (quote.segments || []).length })) + '</summary>' +
         '<div class="quote-table-wrap">' +
           '<table class="quote-table">' +
@@ -2102,18 +3855,13 @@ function openReserveModal(garage, preserveToken) {
 
   openModal('reserveModal');
   q('#reserveConfirmBtn').addEventListener('click', doReserve);
-  q('#regenPlate').addEventListener('click', function () {
-    q('#plateInput').value = generatePlate();
-  });
-  setTimeout(function () { const input = q('#plateInput'); if (input) input.focus(); }, 100);
+  q('#regenPlate').addEventListener('click', function () { q('#plateInput').value = generatePlate(); });
+  setTimeout(function () { const input = q('#plateInput'); if (input) input.focus(); }, 80);
 }
 
 function showReserveModalError(message) {
   const box = q('#reserveError');
-  if (box) {
-    box.textContent = message;
-    box.hidden = false;
-  }
+  if (box) { box.textContent = message; box.hidden = false; }
 }
 
 function doReserve() {
@@ -2146,7 +3894,6 @@ function doReserve() {
       toast(t('toast.duplicateSubmit'), 'warn');
       return res;
     }
-
     if (res.code === 'STORAGE_WRITE_FAILED' || res.code === 'STORAGE_READ_FAILED' || res.code === 'STORAGE_UNAVAILABLE') {
       const msg = t('toast.storageError', { err: res.error || res.code });
       showReserveModalError(msg);
@@ -2154,14 +3901,12 @@ function doReserve() {
       if (confirmBtn) confirmBtn.disabled = false;
       return res;
     }
-
     if (res.code === 'NO_AVAILABILITY') {
       toast(t('toast.race'), 'err');
       closeModal('reserveModal');
       renderResults(false);
       return res;
     }
-
     const msg = t('validation.' + res.code, {
       vehicle: t('vehicle.' + state.vehicleType),
       open: res.details && res.details.open ? res.details.open : '',
@@ -2217,9 +3962,7 @@ function openSuccessModal(booking) {
         '<div><span>' + escapeHtml(t('success.payment')) + '</span><strong>' + escapeHtml(t('success.paymentSim')) + '</strong></div>' +
       '</div>' +
 
-      (booking.quote
-        ? '<div class="booking-quote-summary">' + escapeHtml(t('success.quoteLockedNote', { base: lockedBase })) + '</div>'
-        : '') +
+      (booking.quote ? '<div class="booking-quote-summary">' + escapeHtml(t('success.quoteLockedNote', { base: lockedBase })) + '</div>' : '') +
 
       '<div class="qr-box">' +
         qrSvg(booking.id) +
@@ -2228,9 +3971,7 @@ function openSuccessModal(booking) {
       '</div>' +
 
       '<div class="modal-actions">' +
-        (dirUrl
-          ? '<a class="btn btn-secondary" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('card.directionsDemo')) + '</a>'
-          : '') +
+        (dirUrl ? '<a class="btn btn-secondary" href="' + escapeHtml(dirUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(t('card.directionsDemo')) + '</a>' : '') +
         '<button class="btn btn-primary" type="button" id="successDone">' + escapeHtml(t('common.done')) + '</button>' +
       '</div>' +
     '</div>';
@@ -2242,8 +3983,6 @@ function openSuccessModal(booking) {
     state.currentGarage = null;
   });
 }
-
-/* ------------------------- My Bookings Modal ------------------------- */
 
 function openBookingsModal() {
   renderBookingsModal();
@@ -2294,15 +4033,11 @@ function renderBookingsModal() {
       return '' +
         '<div class="booking-row' + (isCancelled ? ' is-cancelled' : '') + '" data-booking-id="' + escapeHtml(b.id) + '" data-booking-status="' + escapeHtml(b.status) + '">' +
           '<div class="booking-row-top">' +
-            '<div>' +
-              '<h4>' + escapeHtml(b.garage) + '</h4>' +
-              '<span class="bid">' + escapeHtml(b.id) + '</span>' +
-            '</div>' +
+            '<div><h4>' + escapeHtml(b.garage) + '</h4><span class="bid">' + escapeHtml(b.id) + '</span></div>' +
             statusBadge +
           '</div>' +
           '<div class="booking-meta">' +
-            '<div><span>' + escapeHtml(t('bookings.dateTime')) + '</span><strong>' +
-              escapeHtml(formatIntervalLabel(b)) + ' (' + escapeHtml(formatDuration(b.durationMinutes)) + ')</strong></div>' +
+            '<div><span>' + escapeHtml(t('bookings.dateTime')) + '</span><strong>' + escapeHtml(formatIntervalLabel(b)) + ' (' + escapeHtml(formatDuration(b.durationMinutes)) + ')</strong></div>' +
             '<div><span>' + escapeHtml(t('bookings.vehicle')) + '</span><strong>' + escapeHtml(t('vehicle.' + b.vehicleType)) + '</strong></div>' +
             '<div><span>' + escapeHtml(t('bookings.plate')) + '</span><strong>' + escapeHtml(b.plate) + '</strong></div>' +
             '<div><span>' + escapeHtml(t('bookings.total')) + '</span><strong class="booking-locked-total">' + formatArs(b.cost) + '</strong></div>' +
@@ -2316,10 +4051,7 @@ function renderBookingsModal() {
   container.innerHTML =
     '<div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="bookingsTitle">' +
       '<div class="modal-head">' +
-        '<div>' +
-          '<h3 id="bookingsTitle">' + escapeHtml(t('bookings.title')) + '</h3>' +
-          '<p class="modal-sub">' + escapeHtml(t('bookings.subtitle')) + '</p>' +
-        '</div>' +
+        '<div><h3 id="bookingsTitle">' + escapeHtml(t('bookings.title')) + '</h3><p class="modal-sub">' + escapeHtml(t('bookings.subtitle')) + '</p></div>' +
         '<button class="icon-btn" type="button" data-close="bookingsModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
       '</div>' +
       body +
@@ -2340,11 +4072,8 @@ function renderBookingsModal() {
     btn.addEventListener('click', function () {
       const id = btn.getAttribute('data-cancel-booking');
       const res = cancelBooking(id);
-      if (res && res.ok) {
-        toast(t('bookings.canceled', { id: res.booking.id, garage: res.booking.garage }), 'ok');
-      } else if (res && !res.ok) {
-        toast(t('toast.storageError', { err: res.error || res.code }), 'err');
-      }
+      if (res && res.ok) toast(t('bookings.canceled', { id: res.booking.id, garage: res.booking.garage }), 'ok');
+      else if (res && !res.ok) toast(t('toast.storageError', { err: res.error || res.code }), 'err');
       renderBookingsModal();
     });
   });
@@ -2369,17 +4098,10 @@ function openBookingQr(booking) {
   container.innerHTML =
     '<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bookingQrTitle">' +
       '<div class="modal-head">' +
-        '<div>' +
-          '<h3 id="bookingQrTitle">' + escapeHtml(t('bookings.qrTitle')) + '</h3>' +
-          '<p class="modal-sub">' + escapeHtml(t('bookings.qrSubtitle')) + '</p>' +
-        '</div>' +
+        '<div><h3 id="bookingQrTitle">' + escapeHtml(t('bookings.qrTitle')) + '</h3><p class="modal-sub">' + escapeHtml(t('bookings.qrSubtitle')) + '</p></div>' +
         '<button class="icon-btn" type="button" data-close="qrModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
       '</div>' +
-      '<div class="qr-detail">' +
-        qrSvg(booking.id) +
-        '<div class="qr-caption">' + escapeHtml(t('success.qrCaption')) + '</div>' +
-        '<code>' + escapeHtml(booking.id) + '</code>' +
-      '</div>' +
+      '<div class="qr-detail">' + qrSvg(booking.id) + '<div class="qr-caption">' + escapeHtml(t('success.qrCaption')) + '</div><code>' + escapeHtml(booking.id) + '</code></div>' +
       '<div class="summary-grid">' +
         '<div><span>' + escapeHtml(t('bookings.garage')) + '</span><strong>' + escapeHtml(booking.garage) + '</strong></div>' +
         '<div><span>' + escapeHtml(t('bookings.dateTime')) + '</span><strong>' + escapeHtml(formatIntervalLabel(booking)) + '</strong></div>' +
@@ -2399,8 +4121,6 @@ function openBookingQr(booking) {
     openBookingsModal();
   });
 }
-
-/* ------------------------- QR & Clipboard Helpers ------------------------- */
 
 function generatePlate() {
   const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -2428,7 +4148,6 @@ function qrSvg(id) {
   const size = N * cell + pad * 2;
   let h = hashString(String(id));
   let modules = '';
-
   for (let y = 0; y < N; y++) {
     for (let x = 0; x < N; x++) {
       h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
@@ -2437,21 +4156,19 @@ function qrSvg(id) {
       }
     }
   }
-
   function finder(fx, fy) {
     const X = pad + fx * cell;
     const Y = pad + fy * cell;
     return '<g transform="translate(' + X + ',' + Y + ')">' +
-      '<rect width="' + (7 * cell) + '" height="' + (7 * cell) + '" fill="#0F172A" rx="2"/>' +
+      '<rect width="' + (7 * cell) + '" height="' + (7 * cell) + '" fill="#0B1220" rx="2"/>' +
       '<rect x="' + cell + '" y="' + cell + '" width="' + (5 * cell) + '" height="' + (5 * cell) + '" fill="#FFFFFF"/>' +
-      '<rect x="' + (2 * cell) + '" y="' + (2 * cell) + '" width="' + (3 * cell) + '" height="' + (3 * cell) + '" fill="#0F172A" rx="1.5"/>' +
+      '<rect x="' + (2 * cell) + '" y="' + (2 * cell) + '" width="' + (3 * cell) + '" height="' + (3 * cell) + '" fill="#0B1220" rx="1.5"/>' +
     '</g>';
   }
-
   return '<svg class="qr-svg" width="164" height="164" viewBox="0 0 ' + size + ' ' + size +
     '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + escapeHtml(t('success.qrAria', { id: id })) + '">' +
     '<rect width="' + size + '" height="' + size + '" rx="10" fill="#FFFFFF"/>' +
-    '<g fill="#0F172A">' + modules + '</g>' +
+    '<g fill="#0B1220">' + modules + '</g>' +
     finder(0, 0) + finder(N - 7, 0) + finder(0, N - 7) +
     '<rect x="0.5" y="0.5" width="' + (size - 1) + '" height="' + (size - 1) + '" rx="10" fill="none" stroke="#E2E8F0"/>' +
   '</svg>';
@@ -2471,24 +4188,18 @@ function copyText(text) {
     toast(ok ? t('toast.copiedFallback') : t('toast.copyManual', { id: text }), ok ? 'ok' : 'warn');
   }
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text)
-      .then(function () { toast(t('toast.copied'), 'ok'); })
-      .catch(fallback);
+    navigator.clipboard.writeText(text).then(function () { toast(t('toast.copied'), 'ok'); }).catch(fallback);
   } else {
     fallback();
   }
 }
-
-/* ------------------------- Separated Technical Info & QA Modal ------------------------- */
 
 function renderStatusModal() {
   const container = q('#statusModal');
   if (!container) return;
 
   function list(items) {
-    return '<ul>' + items.map(function (key) {
-      return '<li>' + escapeHtml(t(key)) + '</li>';
-    }).join('') + '</ul>';
+    return '<ul>' + items.map(function (key) { return '<li>' + escapeHtml(t(key)) + '</li>'; }).join('') + '</ul>';
   }
 
   let qaResultsHtml = '';
@@ -2505,16 +4216,13 @@ function renderStatusModal() {
   container.innerHTML =
     '<div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="statusTitle">' +
       '<div class="modal-head">' +
-        '<div>' +
-          '<h3 id="statusTitle">' + escapeHtml(t('status.title')) + '</h3>' +
-          '<p class="modal-sub">' + escapeHtml(t('status.subtitle')) + '</p>' +
-        '</div>' +
+        '<div><h3 id="statusTitle">' + escapeHtml(t('status.title')) + '</h3><p class="modal-sub">' + escapeHtml(t('status.subtitle')) + '</p></div>' +
         '<button class="icon-btn" type="button" data-close="statusModal" aria-label="' + escapeHtml(t('common.close')) + '">×</button>' +
       '</div>' +
 
       '<div class="qa-panel">' +
         '<h4>' + escapeHtml(t('status.qaTitle')) + '</h4>' +
-        '<p>' + escapeHtml(t('status.qaDesc')) + '</p>' +
+        '<p class="muted small">' + escapeHtml(t('status.qaDesc')) + '</p>' +
         '<label class="qa-toggle-row" for="offlineSwitch">' +
           '<span>' + escapeHtml(t('status.offlineToggle')) + '</span>' +
           '<input id="offlineSwitch" type="checkbox"' + (state.offline ? ' checked' : '') + ' />' +
@@ -2532,22 +4240,16 @@ function renderStatusModal() {
         '<h4><span class="badge badge-func">' + escapeHtml(t('badges.functional')) + '</span> ' + escapeHtml(t('status.functionalTitle')) + '</h4>' +
         list(['status.f1', 'status.f2', 'status.f3', 'status.f4', 'status.f5']) +
       '</div>' +
-
       '<div class="status-section">' +
         '<h4><span class="badge badge-simulado">' + escapeHtml(t('badges.simulated')) + '</span> ' + escapeHtml(t('status.simulatedTitle')) + '</h4>' +
         list(['status.s1', 'status.s2']) +
       '</div>' +
-
       '<div class="status-section">' +
         '<h4><span class="badge badge-conceptual">' + escapeHtml(t('badges.conceptual')) + '</span> ' + escapeHtml(t('status.conceptualTitle')) + '</h4>' +
         list(['status.c1', 'status.c2']) +
       '</div>' +
-
       '<div class="status-note">' + escapeHtml(t('status.note')) + '</div>' +
-
-      '<div class="modal-actions">' +
-        '<button class="btn btn-primary" type="button" data-close="statusModal">' + escapeHtml(t('status.understood')) + '</button>' +
-      '</div>' +
+      '<div class="modal-actions"><button class="btn btn-primary" type="button" data-close="statusModal">' + escapeHtml(t('status.understood')) + '</button></div>' +
     '</div>';
 
   const offlineEl = q('#offlineSwitch', container);
@@ -2556,45 +4258,24 @@ function renderStatusModal() {
   const qaBtn = q('#runQaSuiteBtn', container);
   if (qaBtn) {
     qaBtn.addEventListener('click', function () {
-      state.lastQaRun = Core.runCoreAcceptanceScenarios().concat(Core.runSprint02AcceptanceScenarios());
+      state.lastQaRun = Core.runCoreAcceptanceScenarios()
+        .concat(Core.runSprint02AcceptanceScenarios())
+        .concat(Core.runSprint02bAcceptanceScenarios());
       renderStatusModal();
     });
   }
-
   const sandboxBtn = q('#enterSandboxBtn', container);
-  if (sandboxBtn) {
-    sandboxBtn.addEventListener('click', function () {
-      closeModal('statusModal');
-      enterSandbox();
-    });
-  }
-
+  if (sandboxBtn) sandboxBtn.addEventListener('click', function () { closeModal('statusModal'); enterSandbox(); });
   const testBtn = q('#statusTestBtn', container);
-  if (testBtn) {
-    testBtn.addEventListener('click', function () {
-      closeModal('statusModal');
-      simulateExternalFillForInterval();
-    });
-  }
-
+  if (testBtn) testBtn.addEventListener('click', function () { closeModal('statusModal'); simulateExternalFillForInterval(); });
   const resetBtn = q('#resetDemoBtn', container);
-  if (resetBtn) {
-    resetBtn.addEventListener('click', function () {
-      closeModal('statusModal');
-      resetDemo();
-    });
-  }
+  if (resetBtn) resetBtn.addEventListener('click', function () { closeModal('statusModal'); resetDemo(); });
 }
 
 function openModal(id) {
   const modal = q('#' + id);
   if (!modal) return;
-  const wasOpen = modal.classList.contains('show');
   modal.classList.add('show');
-  if (!wasOpen) {
-    modal.classList.add('just-opened');
-    setTimeout(function () { modal.classList.remove('just-opened'); }, 220);
-  }
   modal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
 }
@@ -2602,9 +4283,9 @@ function openModal(id) {
 function closeModal(id) {
   const modal = q('#' + id);
   if (!modal) return;
-  modal.classList.remove('show', 'just-opened');
+  modal.classList.remove('show');
   modal.setAttribute('aria-hidden', 'true');
-  if (!q('.modal.show')) document.body.classList.remove('modal-open');
+  if (!q('.modal.show') && !state.detailGarageId) document.body.classList.remove('modal-open');
 }
 
 /* ------------------------- Sandbox & Demo Actions ------------------------- */
@@ -2619,6 +4300,7 @@ function enterSandbox() {
   q('#departureInput').value = '11:00';
   q('#vehicleSel').value = 'car';
   q('#zoneSel').value = 'obeliso';
+  q('#customAddr').value = '';
   state.zoneId = 'obeliso';
   state.destCoords = ZONE_MAP['obeliso'].coords;
   state.destLabel = t('zone.obeliso');
@@ -2659,33 +4341,20 @@ function exitSandbox() {
 
 function simulateExternalFillForInterval() {
   readForm();
-  if (!state.interval || !state.interval.valid) {
-    toast(t('results.summaryInvalid'), 'warn');
-    return;
-  }
+  if (!state.interval || !state.interval.valid) { toast(t('results.summaryInvalid'), 'warn'); return; }
   const garages = getActiveGarages();
   const bookings = getBookings();
   const eligible = garages.map(function (g) {
     return { garage: g, ev: Core.evaluateGarageEligibility(g, state.interval, state.vehicleType, bookings) };
   }).filter(function (x) { return x.ev.eligible && x.ev.availability.availableSpaces > 0; });
 
-  if (eligible.length === 0) {
-    toast(t('toast.simulateNone'), 'err');
-    return;
-  }
-
-  eligible.sort(function (a, b) {
-    return a.ev.availability.availableSpaces - b.ev.availability.availableSpaces;
-  });
-
+  if (eligible.length === 0) { toast(t('toast.simulateNone'), 'err'); return; }
+  eligible.sort(function (a, b) { return a.ev.availability.availableSpaces - b.ev.availability.availableSpaces; });
   const target = eligible[0];
   const spotsToFill = target.ev.availability.availableSpaces;
   const adapter = activeStorageAdapter();
   const current = adapter.read();
-  if (!current.ok) {
-    toast(t('toast.storageError', { err: current.error }), 'err');
-    return;
-  }
+  if (!current.ok) { toast(t('toast.storageError', { err: current.error }), 'err'); return; }
   const next = current.data.slice();
   const quote = Core.cloneQuoteSnapshot(target.ev.quote);
 
@@ -2722,17 +4391,10 @@ function simulateExternalFillForInterval() {
   }
 
   const writeRes = adapter.write(next);
-  if (!writeRes.ok) {
-    toast(t('toast.storageError', { err: writeRes.error }), 'err');
-    return;
-  }
-
-  if (state.currentGarage && state.currentGarage.id === target.garage.id) {
-    closeModal('reserveModal');
-  }
+  if (!writeRes.ok) { toast(t('toast.storageError', { err: writeRes.error }), 'err'); return; }
+  if (state.currentGarage && state.currentGarage.id === target.garage.id) closeModal('reserveModal');
   renderResults(false);
   toast(t('toast.simulateDone', { garage: target.garage.name, n: spotsToFill }), 'warn');
-
   setTimeout(function () {
     const card = document.querySelector('.card[data-garage="' + target.garage.id + '"]');
     if (!card) return;
@@ -2742,15 +4404,9 @@ function simulateExternalFillForInterval() {
 }
 
 function resetDemo() {
-  if (state.sandboxMode) {
-    resetSandbox();
-    return;
-  }
+  if (state.sandboxMode) { resetSandbox(); return; }
   const writeRes = activeStorageAdapter().write([]);
-  if (!writeRes.ok) {
-    toast(t('toast.storageError', { err: writeRes.error }), 'err');
-    return;
-  }
+  if (!writeRes.ok) { toast(t('toast.storageError', { err: writeRes.error }), 'err'); return; }
   state.currentGarage = null;
   state.lastBooking = null;
   state.qrBooking = null;
@@ -2774,7 +4430,7 @@ function setSearchLoading(loading) {
   btn.disabled = state.searching;
   btn.innerHTML = state.searching
     ? '<span class="spinner" aria-hidden="true"></span><span>' + escapeHtml(t('search.searchingBtn')) + '</span>'
-    : '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>' + escapeHtml(t('search.searchBtn')) + '</span>';
+    : '<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>' + escapeHtml(t('search.searchBtn')) + '</span>';
 }
 
 function setMobileSearchExpanded(expanded) {
@@ -2794,20 +4450,12 @@ function updateMobileViewButton() {
 }
 
 function setMobileView(view) {
-  state.mobileView = view === 'map' ? 'map' : 'list';
-  const layout = q('#marketplaceLayout');
-  if (layout) layout.setAttribute('data-mobile-view', state.mobileView);
-  updateMobileViewButton();
-  if (state.mobileView === 'map' && state.map) {
-    setTimeout(function () {
-      state.map.invalidateSize();
-      declutterPriceMarkers();
-    }, 100);
-  }
+  setSheetState(view === 'map' ? 'peek' : 'half');
 }
 
-async function onSearch(event) {
+async function onSearch(event, isInit) {
   if (event && event.preventDefault) event.preventDefault();
+  closeDestDropdown();
   readForm();
   const customAddress = (q('#customAddr').value || '').trim();
   let zoneId = q('#zoneSel').value;
@@ -2821,7 +4469,6 @@ async function onSearch(event) {
   if (zoneId === 'custom') {
     if (customAddress) {
       setSearchLoading(true);
-      q('#destLine').textContent = t('search.searching', { address: customAddress });
       const coords = await geocodeAddress(customAddress);
       setSearchLoading(false);
       if (coords) {
@@ -2841,6 +4488,9 @@ async function onSearch(event) {
   }
 
   state.destCoords = dest;
+  if (!isInit) {
+    recordRecentDestination(state.destLabel, dest, state.zoneId);
+  }
   setMobileSearchExpanded(false);
   renderResults(true);
 }
@@ -2858,10 +4508,7 @@ function setOfflineMode(isOffline) {
   state.offline = !!isOffline;
   lsPrefSet(LS.offline, state.offline ? '1' : '0');
   applyOfflineUi(state.offline);
-  toast(
-    state.offline ? t('toast.offlineOn') : t('toast.offlineOff'),
-    state.offline ? 'warn' : 'ok'
-  );
+  toast(state.offline ? t('toast.offlineOn') : t('toast.offlineOff'), state.offline ? 'warn' : 'ok');
   renderResults(false);
 }
 
@@ -2870,6 +4517,11 @@ function onOfflineToggle(event) {
 }
 
 function onMapClick(event) {
+  const detailBtn = event.target.closest('.mp-detail-btn');
+  if (detailBtn) {
+    openDetailPanel(detailBtn.getAttribute('data-mp-detail'), 'info');
+    return;
+  }
   const btn = event.target.closest('.mp-reserve');
   if (!btn || btn.disabled) return;
   const garage = getActiveGarages().find(function (g) { return g.id === btn.getAttribute('data-garage'); });
@@ -2880,7 +4532,11 @@ function onMapClick(event) {
 
 function init() {
   state.lang = lsPrefGet(LS.lang) === 'en' ? 'en' : 'es';
+  state.theme = lsPrefGet(LS.theme) === 'dark' ? 'dark' : 'light';
+  loadUserPreferences();
   applyStaticTranslations();
+  applyTheme(state.theme, true);
+  setSplitRatio(state.splitPct);
 
   const todayBa = Core.getTodayInBuenosAires();
   state.date = todayBa;
@@ -2907,12 +4563,37 @@ function init() {
   state.destLabel = t('zone.obeliso');
   updateBookingsCount();
 
+  // Language & Theme
   Array.prototype.forEach.call(document.querySelectorAll('.lang-btn'), function (btn) {
     btn.addEventListener('click', function () { setLanguage(btn.dataset.lang); });
   });
+  q('#themeToggleBtn').addEventListener('click', toggleTheme);
 
-  q('#searchForm').addEventListener('submit', onSearch);
+  // Navigation (Desktop + Mobile Bottom Nav)
+  q('#navExplore').addEventListener('click', function () { closeDetailPanel(); });
+  q('#bookingsBtn').addEventListener('click', openBookingsModal);
+  q('#favoritesBtn').addEventListener('click', openFavoritesModal);
+  q('#profileBtn').addEventListener('click', openProfileModal);
+  q('#mbnExplore').addEventListener('click', function () { closeDetailPanel(); });
+  q('#mbnBookings').addEventListener('click', openBookingsModal);
+  q('#mbnFavorites').addEventListener('click', openFavoritesModal);
+  q('#mbnProfile').addEventListener('click', openProfileModal);
+
+  // Search & Progressive Dropdown
+  q('#searchForm').addEventListener('submit', function (ev) { onSearch(ev, false); });
+  const addrInput = q('#customAddr');
+  addrInput.addEventListener('focus', openDestDropdown);
+  addrInput.addEventListener('input', openDestDropdown);
+  q('#favDestBtn').addEventListener('click', function () { toggleFavoriteDestination(); });
+
   q('#sortSel').addEventListener('change', function () { renderResults(false); });
+  Array.prototype.forEach.call(document.querySelectorAll('.quick-sort-btn'), function (btn) {
+    btn.addEventListener('click', function () {
+      q('#sortSel').value = btn.getAttribute('data-quick-sort');
+      renderResults(false);
+    });
+  });
+
   q('#onlyAvailable').addEventListener('change', function () { renderResults(false); });
   q('#dateInput').addEventListener('change', function () {
     syncDepartureDateOnArrivalChange();
@@ -2927,7 +4608,7 @@ function init() {
       q('#customAddr').focus();
     } else {
       q('#customAddr').value = '';
-      onSearch();
+      onSearch(null, false);
     }
   });
 
@@ -2948,6 +4629,7 @@ function init() {
     if (el) el.addEventListener('change', function () { renderResults(false); });
   });
 
+  q('#advancedFiltersBtn').addEventListener('click', openAdvancedFiltersModal);
   q('#clearFiltersBtn').addEventListener('click', function () { clearFilters(false); });
 
   q('#mobileSearchToggle').addEventListener('click', function () {
@@ -2959,10 +4641,11 @@ function init() {
     setMobileView(state.mobileView === 'map' ? 'list' : 'map');
   });
 
-  q('#offlineBannerBtn').addEventListener('click', function () {
-    setOfflineMode(false);
-  });
+  q('#compareOpenBtn').addEventListener('click', openCompareModal);
+  q('#compareClearBtn').addEventListener('click', clearCompare);
+  q('#detailBackdrop').addEventListener('click', closeDetailPanel);
 
+  q('#offlineBannerBtn').addEventListener('click', function () { setOfflineMode(false); });
   q('#sandboxResetBtn').addEventListener('click', resetSandbox);
   q('#sandboxExitBtn').addEventListener('click', exitSandbox);
 
@@ -2972,38 +4655,47 @@ function init() {
   }
   q('#statusBtn').addEventListener('click', openStatusInfoModal);
   q('#footerInfoBtn').addEventListener('click', openStatusInfoModal);
-  q('#bookingsBtn').addEventListener('click', openBookingsModal);
   q('#map').addEventListener('click', onMapClick);
 
+  wireSplitDivider();
+  wireMobileSheet();
+
   document.addEventListener('click', function (event) {
+    if (!event.target.closest('.sf-dest')) {
+      closeDestDropdown();
+    }
     const closer = event.target.closest('[data-close]');
     if (closer) {
       closeModal(closer.getAttribute('data-close'));
       return;
     }
-    if (
-      event.target.classList &&
-      event.target.classList.contains('modal') &&
-      event.target.classList.contains('show')
-    ) {
+    if (event.target.classList && event.target.classList.contains('modal') && event.target.classList.contains('show')) {
       closeModal(event.target.id);
     }
   });
 
   document.addEventListener('keydown', function (event) {
+    if (q('#galleryModal').classList.contains('show')) {
+      if (event.key === 'ArrowRight') { state.galleryIndex++; renderGalleryModal(); return; }
+      if (event.key === 'ArrowLeft') { state.galleryIndex--; renderGalleryModal(); return; }
+    }
     if (event.key !== 'Escape') return;
-    Array.prototype.forEach.call(document.querySelectorAll('.modal.show'), function (modal) {
-      closeModal(modal.id);
-    });
+    closeDestDropdown();
+    const openModals = document.querySelectorAll('.modal.show');
+    if (openModals.length > 0) {
+      Array.prototype.forEach.call(openModals, function (modal) { closeModal(modal.id); });
+      return;
+    }
+    if (state.detailGarageId) closeDetailPanel();
   });
 
-  onSearch();
+  onSearch(null, true);
   setTimeout(function () {
     if (state.map) state.map.invalidateSize();
-  }, 450);
+  }, 400);
 }
 
-/* Controlled test & QA API (Preserves Sprint 01 hooks + Sprint 02 additions) */
+/* Controlled test & QA API (Preserves Sprint 01 + Sprint 02A hooks + Sprint 2B hooks) */
 window.ParkFinderApp = {
   state: state,
   GARAGES: GARAGES,
@@ -3019,11 +4711,24 @@ window.ParkFinderApp = {
   cancelBooking: cancelBooking,
   clearFilters: clearFilters,
   setMobileView: setMobileView,
+  setSheetState: setSheetState,
+  setSplitRatio: setSplitRatio,
+  setTheme: function (th) { applyTheme(th, true); },
+  toggleTheme: toggleTheme,
+  toggleFavoriteGarage: toggleFavoriteGarage,
+  toggleFavoriteDestination: toggleFavoriteDestination,
+  toggleCompare: toggleCompare,
+  openCompareModal: openCompareModal,
+  openDetailPanel: openDetailPanel,
+  closeDetailPanel: closeDetailPanel,
+  openGalleryModal: openGalleryModal,
+  getRecommendations: function () { return state.recommendations; },
   setOfflineMode: setOfflineMode,
   setStorageBackend: function (impl) { state.storageImplOverride = impl; },
   restoreStorageBackend: function () { state.storageImplOverride = null; },
   runCoreQaSuite: Core.runCoreAcceptanceScenarios,
-  runSprint02QaSuite: Core.runSprint02AcceptanceScenarios
+  runSprint02QaSuite: Core.runSprint02AcceptanceScenarios,
+  runSprint02bQaSuite: Core.runSprint02bAcceptanceScenarios
 };
 
 if (document.readyState === 'loading') {
