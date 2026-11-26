@@ -1,0 +1,10 @@
+# Allowlist: only the browser app and its static media are public.
+# All other repository files, directories, dotfiles, docs, tests, SQL and config stay private.
+/*
+!/index.html
+!/styles.css
+!/core-booking.js
+!/sprint2c-app.js
+!/supabase-client.js
+!/assets/
+!/assets/**
