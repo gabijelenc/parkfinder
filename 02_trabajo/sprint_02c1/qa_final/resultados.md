@@ -14,7 +14,7 @@
 |---|---|---|
 | Conexión con Supabase | Parcial, conexión alcanzada | La UI indica “Backend Supabase · Centralizado”; Auth respondió con límite de email. La lista comercial de la portada se identifica en la propia UI como sintética/local. |
 | Ocho estacionamientos comerciales | PASS visual | Se mostraron ocho opciones y ocho disponibles. |
-| Registro | BLOCKED | Un único intento sintético devolvió “email rate limit exceeded”; no se confirmó si Auth persistió un usuario no verificado. |
+| Registro | BLOCKED | El intento con correo sintético de formato válido devolvió “email rate limit exceeded”; dos formatos anteriores fueron rechazados como correo inválido. No se confirmó si Auth persistió un usuario no verificado y no se repitió el registro tras el rate limit. |
 | Inicio de sesión | FAIL | El intento con la misma identidad sintética devolvió “Invalid login credentials”; no se estableció sesión. |
 | Vehículos | BLOCKED | La pestaña exige iniciar sesión. |
 | Búsqueda | PASS | Palermo Soho reordenó los ocho resultados. |
