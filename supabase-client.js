@@ -761,7 +761,7 @@
     }
   }
 
-  async function extendBooking(bookingId, newEndsAt) {
+  async function extendBooking(bookingId, quoteId) {
     var sb = getClient();
     if (!sb || backendMode !== 'supabase') {
       return { ok: false, code: 'BACKEND_UNAVAILABLE' };
@@ -769,7 +769,7 @@
     try {
       var res = await sb.rpc('pf_extend_booking', {
         p_booking_id: bookingId,
-        p_new_ends_at: newEndsAt
+        p_quote_id: quoteId
       });
       if (res.error) {
         return { ok: false, code: isNetworkError(res.error) ? 'NETWORK_ERROR' : 'RPC_ERROR', message: res.error.message };
