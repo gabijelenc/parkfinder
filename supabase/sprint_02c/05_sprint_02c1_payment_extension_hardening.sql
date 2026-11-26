@@ -749,5 +749,4 @@ BEGIN
     )
   );
 END;
-$function$
-
+$function$;
