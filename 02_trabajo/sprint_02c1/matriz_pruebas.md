@@ -11,7 +11,7 @@
 | H03 | Demo aprobado solo como `demo_simulated`, `is_test=true` | SQL remoto Supabase | PASS |
 | H04 | Hold MP y confirmación MP por RPC demo bloqueados | SQL remoto Supabase | PASS |
 | H05 | Firma de extensión solo acepta UUID de cotización; UPDATE directo a payments denegado | SQL remoto Supabase | PASS |
-| H06 | Cotización válida; replay idempotente; un solo evento/auditoría | SQL remoto Supabase | PASS |
+| H06 | Cotización válida; replay idempotente; un solo evento/auditoría y saldo pendiente actualizado | SQL remoto Supabase | PASS |
 | H07 | Cotización vencida | SQL remoto Supabase | PASS |
 | H08 | Cambio del precio invalida la cotización anterior | SQL remoto Supabase | PASS |
 | H09 | Sin disponibilidad, se preserva la reserva original | SQL remoto Supabase | PASS |
@@ -22,6 +22,6 @@
 
 ## Casos críticos y cobertura explícita
 
-La manipulación de importe se bloquea en el contrato porque `pf_extend_booking(uuid, uuid)` no recibe importes; el importe se vuelve a calcular en PostgreSQL. La prueba H05 inspecciona la firma y comprueba que el usuario autenticado no puede modificar directamente `payments`. La actualización de precio se comprueba en H08. Las extensiones pagas/simuladas requieren pago incremental y no se habilitan desde la interfaz.
+La manipulación de importe se bloquea en el contrato porque `pf_extend_booking(uuid, uuid)` no recibe importes; el importe se vuelve a calcular en PostgreSQL. La prueba H05 inspecciona la firma y comprueba que el usuario autenticado no puede modificar directamente `payments`. La actualización de precio se comprueba en H08. Las extensiones pagas/simuladas requieren pago incremental y no se habilitan desde la interfaz. H06 confirma que el importe pendiente se incrementa con el nuevo total.
 
-Pruebas ejecutadas: remotas SQL en Supabase y prueba remota paralela MCP. Pruebas locales de navegador, flujos visuales, despliegue Cloudflare y CI: **no ejecutadas**. Pruebas de MP reales o sandbox externo: **no ejecutadas y fuera de alcance**. No se usaron datos personales.
+Pruebas ejecutadas: remotas SQL en Supabase y prueba remota paralela MCP. Pruebas locales de navegador y flujos visuales: **no ejecutadas**. El check de preview de Cloudflare en GitHub terminó fallido para commits previos y está en proceso para el último commit; no hay URL de preview. El build log no pudo inspeccionarse vía MCP. Pruebas de MP reales o sandbox externo: **no ejecutadas y fuera de alcance**. No se usaron datos personales.
